@@ -41,6 +41,28 @@ export const EMOJI_PRESET_LIST: EmojiPreset[] = [
 ];
 
 /**
+ * Extract the first grapheme (visual character) from a string.
+ * Handles multi-codepoint emojis like ❤️, 👨‍👩‍👧, 🇺🇸
+ */
+function getFirstEmoji(str: string): string {
+  const trimmed = str.trim();
+  if (!trimmed) return '';
+  
+  // Use Intl.Segmenter if available (modern browsers/Node 16+)
+  if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+    const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
+    const segments = segmenter.segment(trimmed);
+    const first = segments[Symbol.iterator]().next().value;
+    return first?.segment || '';
+  }
+  
+  // Fallback: use Array.from for basic multi-codepoint handling
+  // This works for most emojis but may not handle all ZWJ sequences
+  const chars = Array.from(trimmed);
+  return chars[0] || '';
+}
+
+/**
  * Parse SMS message to extract emoji and points
  * Supports formats:
  * - "🔥 +10" or "🔥 10" → { emoji: '🔥', points: 10 }
@@ -57,7 +79,7 @@ export function parseSMS(message: string): ParsedSMS | null {
   
   if (match1) {
     const points = parseInt(match1[1], 10);
-    const emoji = match1[2].trim().charAt(0); // Get first emoji character
+    const emoji = getFirstEmoji(match1[2]);
     const remainingText = trimmed.substring(match1[0].length).trim();
     
     return {
@@ -72,7 +94,7 @@ export function parseSMS(message: string): ParsedSMS | null {
   const match2 = trimmed.match(pattern2);
   
   if (match2) {
-    const emoji = match2[1].trim().charAt(0); // Get first emoji character
+    const emoji = getFirstEmoji(match2[1]);
     const points = parseInt(match2[2], 10);
     const remainingText = trimmed.substring(match2[0].length).trim();
     
@@ -88,7 +110,7 @@ export function parseSMS(message: string): ParsedSMS | null {
   const match3 = trimmed.match(emojiPattern);
   
   if (match3) {
-    const emoji = match3[1].trim().charAt(0);
+    const emoji = getFirstEmoji(match3[1]);
     const presetPoints = EMOJI_PRESETS[emoji];
     
     if (presetPoints !== undefined) {

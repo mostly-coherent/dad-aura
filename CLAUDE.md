@@ -10,6 +10,8 @@
 
 Next.js 14+ web app with TypeScript, Tailwind CSS, Supabase backend, and Twilio SMS integration
 
+*Follows root CLAUDE.md Core Web defaults. No AI/LLM features currently.*
+
 ## Key Commands
 
 ### Development

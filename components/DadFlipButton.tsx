@@ -21,7 +21,15 @@ export default function DadFlipButton({ currentTotal, onFlipSuccess }: DadFlipBu
   async function fetchFlipStatus() {
     try {
       const response = await fetch('/api/flip');
+      if (!response.ok) {
+        console.error('Error fetching flip status: HTTP', response.status);
+        return;
+      }
       const data = await response.json();
+      if (data.error) {
+        console.error('Error in flip status response:', data.error);
+        return;
+      }
       setFlipStatus(data);
     } catch (err) {
       console.error('Error fetching flip status:', err);

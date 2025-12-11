@@ -17,7 +17,15 @@ export default function FlipConfigPanel() {
   async function fetchConfig() {
     try {
       const response = await fetch('/api/flip-config');
+      if (!response.ok) {
+        console.error('Error fetching flip config: HTTP', response.status);
+        return;
+      }
       const data = await response.json();
+      if (data.error || !data.max_flips_per_day === undefined) {
+        console.error('Error in flip config response:', data.error);
+        return;
+      }
       setConfig(data);
       setMaxFlips(data.max_flips_per_day);
     } catch (err) {

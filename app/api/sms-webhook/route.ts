@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { parseSMS } from '@/lib/emoji-parser';
 
+// Use Edge runtime for faster cold starts on Twilio webhooks
+export const runtime = 'edge';
+
 /**
  * POST /api/sms-webhook
  * Twilio webhook handler for incoming SMS messages

@@ -23,12 +23,6 @@ export default function AuraTrends({ last7Days, last30Days }: AuraTrendsProps) {
     events: trend.events,
   }));
   
-  // Calculate cumulative for line chart
-  let cumulative = 0;
-  const cumulativeLast7Days = format7Days.map(day => {
-    cumulative += day.total;
-    return { ...day, cumulative };
-  });
   
   return (
     <div className="space-y-8 px-6 py-8">
