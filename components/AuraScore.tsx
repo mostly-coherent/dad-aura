@@ -14,7 +14,10 @@ export default function AuraScore({ total, todayTotal }: AuraScoreProps) {
   const status = getAuraStatus(total);
   
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-6">
+    <section 
+      className="flex flex-col items-center justify-center py-12 px-6"
+      aria-label="Dad's current aura score"
+    >
       {/* Main Aura Score */}
       <div
         className={`
@@ -24,19 +27,21 @@ export default function AuraScore({ total, todayTotal }: AuraScoreProps) {
           transition-all duration-500 ease-in-out
           animate-pulse-slow
         `}
+        role="img"
+        aria-label={`Aura score: ${total} points. Status: ${status}`}
       >
-        <div className="text-white text-7xl font-bold mb-2">
+        <h2 className="text-white text-7xl font-bold mb-2" aria-hidden="true">
           {total}
-        </div>
-        <div className="text-white text-xl font-semibold opacity-90">
+        </h2>
+        <span className="text-white text-xl font-semibold opacity-90" aria-hidden="true">
           Aura Points
-        </div>
+        </span>
       </div>
       
       {/* Status Label */}
-      <div className="mt-6 text-3xl font-bold text-center">
+      <p className="mt-6 text-3xl font-bold text-center" aria-live="polite">
         {status}
-      </div>
+      </p>
       
       {/* Today's Change */}
       <div className="mt-4 flex items-center gap-2">
@@ -46,11 +51,12 @@ export default function AuraScore({ total, todayTotal }: AuraScoreProps) {
             text-2xl font-bold
             ${todayTotal > 0 ? 'text-green-600' : todayTotal < 0 ? 'text-red-600' : 'text-gray-600'}
           `}
+          aria-label={`Today's change: ${todayTotal > 0 ? 'plus' : todayTotal < 0 ? 'minus' : ''} ${Math.abs(todayTotal)} points`}
         >
           {todayTotal > 0 ? '+' : ''}{todayTotal}
         </span>
       </div>
-    </div>
+    </section>
   );
 }
 

@@ -31,18 +31,21 @@ export default function ActivityFeed({ events }: ActivityFeedProps) {
   };
   
   return (
-    <div className="px-6 py-8">
+    <section className="px-6 py-8" aria-label="Recent aura activity">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
         <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white">
-          🎯 Recent Activity
+          <span aria-hidden="true">🎯 </span>Recent Activity
         </h2>
         
-        <div className="space-y-4">
+        <ul className="space-y-4" role="list" aria-label="Aura events">
           {events.map((event) => {
             const isFlip = isFlipEvent(event);
+            const pointsLabel = isFlip 
+              ? 'Dad used a flip' 
+              : `${event.points > 0 ? 'plus' : event.points < 0 ? 'minus' : ''} ${Math.abs(event.points)} points`;
             
             return (
-              <div
+              <li
                 key={event.id}
                 className={`
                   flex items-start gap-4 p-4 rounded-lg transition-colors
@@ -51,11 +54,16 @@ export default function ActivityFeed({ events }: ActivityFeedProps) {
                     : 'bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600'
                   }
                 `}
+                aria-label={`${event.emoji} ${pointsLabel}, ${formatDistanceToNow(new Date(event.timestamp), { addSuffix: true })}${event.note ? `, note: ${event.note}` : ''}`}
               >
                 {/* Emoji */}
-                <div className={`text-4xl flex-shrink-0 ${isFlip ? 'animate-spin-slow' : ''}`}>
+                <span 
+                  className={`text-4xl flex-shrink-0 ${isFlip ? 'animate-spin-slow' : ''}`}
+                  role="img" 
+                  aria-hidden="true"
+                >
                   {event.emoji}
-                </div>
+                </span>
                 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
@@ -65,13 +73,16 @@ export default function ActivityFeed({ events }: ActivityFeedProps) {
                         DAD FLIP!
                       </span>
                     ) : (
-                      <span className={`text-2xl font-bold ${getPointsColor(event.points)}`}>
+                      <span className={`text-2xl font-bold ${getPointsColor(event.points)}`} aria-hidden="true">
                         {formatPoints(event.points)}
                       </span>
                     )}
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                    <time 
+                      className="text-sm text-gray-500 dark:text-gray-400"
+                      dateTime={new Date(event.timestamp).toISOString()}
+                    >
                       {formatDistanceToNow(new Date(event.timestamp), { addSuffix: true })}
-                    </span>
+                    </time>
                   </div>
                   
                   {event.note && (
@@ -86,12 +97,12 @@ export default function ActivityFeed({ events }: ActivityFeedProps) {
                     </span>
                   </div>
                 </div>
-              </div>
+              </li>
             );
           })}
-        </div>
+        </ul>
       </div>
-    </div>
+    </section>
   );
 }
 

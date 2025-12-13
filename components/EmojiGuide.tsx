@@ -19,15 +19,17 @@ export default function EmojiGuide() {
   ];
 
   return (
-    <section className="px-6 py-4">
+    <section className="px-6 py-4" aria-label="Emoji guide for aura points">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
         {/* Header - Always visible */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          aria-expanded={isExpanded}
+          aria-controls="emoji-guide-content"
         >
           <div className="flex items-center gap-3">
-            <span className="text-2xl">📱</span>
+            <span className="text-2xl" role="img" aria-hidden="true">📱</span>
             <div className="text-left">
               <h2 className="text-lg font-bold text-gray-800 dark:text-white">
                 Emoji Guide
@@ -37,17 +39,21 @@ export default function EmojiGuide() {
               </p>
             </div>
           </div>
-          <span className={`text-2xl transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
+          <span 
+            className={`text-2xl transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+            aria-hidden="true"
+          >
             ▼
           </span>
         </button>
 
         {/* Expandable content */}
         {isExpanded && (
-          <div className="px-6 pb-6 space-y-4">
+          <div id="emoji-guide-content" className="px-6 pb-6 space-y-4">
             {/* Quick tip */}
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-sm">
-              <span className="font-semibold text-blue-800 dark:text-blue-200">💡 Tip:</span>
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-sm" role="note">
+              <span className="font-semibold text-blue-800 dark:text-blue-200" aria-hidden="true">💡 </span>
+              <span className="font-semibold text-blue-800 dark:text-blue-200">Tip:</span>
               <span className="text-blue-700 dark:text-blue-300 ml-1">
                 Send just the emoji, or add custom points like &quot;😀 +7&quot;
               </span>
@@ -56,7 +62,7 @@ export default function EmojiGuide() {
             {/* Emoji tiers */}
             {tiers.map((tier) => (
               tier.emojis.length > 0 && (
-                <div key={tier.name} className="space-y-2">
+                <div key={tier.name} className="space-y-2" role="group" aria-label={`${tier.name} tier: ${tier.range} points`}>
                   <div className="flex items-center gap-2">
                     <div className={`bg-gradient-to-r ${tier.color} text-white text-xs font-bold px-2 py-1 rounded-full`}>
                       {tier.range}
@@ -65,15 +71,19 @@ export default function EmojiGuide() {
                       {tier.name}
                     </span>
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2" role="list">
                     {tier.emojis.map((preset) => (
                       <div
                         key={preset.emoji}
                         className="group relative flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg px-2 py-1 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors cursor-default"
-                        title={`${preset.label}: ${preset.points > 0 ? '+' : ''}${preset.points}`}
+                        role="listitem"
+                        aria-label={`${preset.label}: ${preset.points > 0 ? 'plus' : preset.points < 0 ? 'minus' : ''} ${Math.abs(preset.points)} points`}
                       >
-                        <span className="text-xl">{preset.emoji}</span>
-                        <span className={`text-xs font-bold ${preset.points > 0 ? 'text-green-600 dark:text-green-400' : preset.points < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500'}`}>
+                        <span className="text-xl" role="img" aria-hidden="true">{preset.emoji}</span>
+                        <span 
+                          className={`text-xs font-bold ${preset.points > 0 ? 'text-green-600 dark:text-green-400' : preset.points < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500'}`}
+                          aria-hidden="true"
+                        >
                           {preset.points > 0 ? '+' : ''}{preset.points}
                         </span>
                       </div>
