@@ -139,6 +139,45 @@ export const EMOJI_PRESET_LIST: EmojiPreset[] = [
 ];
 
 /**
+ * Normalize an emoji string to handle variation selectors and encoding differences.
+ * SMS providers may encode emojis differently (with/without FE0F variation selector).
+ */
+function normalizeEmoji(emoji: string): string {
+  // Remove variation selectors (U+FE0E and U+FE0F) for consistent matching
+  // These are invisible characters that affect emoji presentation
+  return emoji.normalize('NFC').replace(/[\uFE0E\uFE0F]/g, '');
+}
+
+/**
+ * Build a normalized lookup map for emoji presets.
+ * This allows matching emojis regardless of variation selectors.
+ */
+function buildNormalizedPresetMap(): Map<string, number> {
+  const map = new Map<string, number>();
+  for (const [emoji, points] of Object.entries(EMOJI_PRESETS)) {
+    // Store both normalized and original versions
+    map.set(normalizeEmoji(emoji), points);
+    map.set(emoji, points);
+  }
+  return map;
+}
+
+// Pre-built normalized map for fast lookups
+const NORMALIZED_PRESETS = buildNormalizedPresetMap();
+
+/**
+ * Get preset points for an emoji, handling encoding variations.
+ */
+function getPresetPointsNormalized(emoji: string): number | undefined {
+  // Try exact match first
+  if (EMOJI_PRESETS[emoji] !== undefined) {
+    return EMOJI_PRESETS[emoji];
+  }
+  // Try normalized match
+  return NORMALIZED_PRESETS.get(normalizeEmoji(emoji));
+}
+
+/**
  * Extract the first grapheme (visual character) from a string.
  * Handles multi-codepoint emojis like ❤️, 👨‍👩‍👧, 🇺🇸
  */
@@ -147,17 +186,58 @@ function getFirstEmoji(str: string): string {
   if (!trimmed) return '';
   
   // Use Intl.Segmenter if available (modern browsers/Node 16+)
-  if (typeof Intl !== 'undefined' && Intl.Segmenter) {
-    const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
-    const segments = segmenter.segment(trimmed);
-    const first = segments[Symbol.iterator]().next().value;
-    return first?.segment || '';
+  // Note: Not available in Edge runtime, so we have a robust fallback
+  if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
+    try {
+      const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
+      const segments = segmenter.segment(trimmed);
+      const first = segments[Symbol.iterator]().next().value;
+      return first?.segment || '';
+    } catch {
+      // Fall through to fallback
+    }
   }
   
-  // Fallback: use Array.from for basic multi-codepoint handling
-  // This works for most emojis but may not handle all ZWJ sequences
+  // Fallback: Extract first emoji using Array.from and check for ZWJ sequences
+  // This handles most emojis including those with variation selectors
   const chars = Array.from(trimmed);
-  return chars[0] || '';
+  if (chars.length === 0) return '';
+  
+  // Check if first char is start of emoji sequence
+  let emoji = chars[0];
+  let i = 1;
+  
+  // Consume ZWJ sequences (emoji + ZWJ + emoji) and variation selectors
+  while (i < chars.length) {
+    const char = chars[i];
+    const code = char.codePointAt(0) || 0;
+    
+    // ZWJ (Zero Width Joiner) - connects emoji sequences
+    if (code === 0x200D) {
+      emoji += char;
+      i++;
+      // Consume the next character after ZWJ
+      if (i < chars.length) {
+        emoji += chars[i];
+        i++;
+      }
+    }
+    // Variation selectors (FE0E, FE0F) and skin tone modifiers (1F3FB-1F3FF)
+    else if (code === 0xFE0E || code === 0xFE0F || (code >= 0x1F3FB && code <= 0x1F3FF)) {
+      emoji += char;
+      i++;
+    }
+    // Combining marks for flags and keycaps
+    else if (code >= 0x20E3 && code <= 0x20E3 || (code >= 0x1F1E6 && code <= 0x1F1FF)) {
+      emoji += char;
+      i++;
+    }
+    else {
+      break;
+    }
+  }
+  
+  return emoji;
 }
 
 /**
@@ -209,7 +289,8 @@ export function parseSMS(message: string): ParsedSMS | null {
   
   if (match3) {
     const emoji = getFirstEmoji(match3[1]);
-    const presetPoints = EMOJI_PRESETS[emoji];
+    // Use normalized lookup to handle encoding variations from SMS providers
+    const presetPoints = getPresetPointsNormalized(emoji);
     
     if (presetPoints !== undefined) {
       const remainingText = trimmed.substring(match3[0].length).trim();
