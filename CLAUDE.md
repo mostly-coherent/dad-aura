@@ -8,7 +8,7 @@
 
 ## Project Type
 
-Next.js 14+ web app with TypeScript, Tailwind CSS, Supabase backend, and Twilio SMS integration
+Next.js 14+ web app with TypeScript, Tailwind CSS, Supabase backend, and Vonage SMS integration
 
 *Follows root CLAUDE.md Core Web defaults. No AI/LLM features currently.*
 
@@ -16,7 +16,7 @@ Next.js 14+ web app with TypeScript, Tailwind CSS, Supabase backend, and Twilio 
 
 ### Development
 ```bash
-cd /Users/jmbeh/Builder_Lab/Dad_Aura
+cd /Users/jmbeh/Personal Builder Lab/dad-aura
 npm run dev          # Start dev server on http://localhost:3000
 npm run build        # Production build
 npm run lint         # ESLint check
@@ -41,11 +41,13 @@ vercel --prod        # Deploy to Vercel personal account
 ## Project Structure
 
 ```
-Dad_Aura/
+dad-aura/
 ├── app/
 │   ├── api/
 │   │   ├── aura/route.ts          # GET aura events, POST new event
-│   │   └── sms-webhook/route.ts   # Twilio SMS webhook handler
+│   │   ├── flip/route.ts          # Dad flip functionality
+│   │   ├── flip-config/route.ts   # Flip configuration
+│   │   └── sms-webhook/route.ts   # Vonage SMS webhook handler
 │   ├── layout.tsx                  # Root layout with providers
 │   ├── page.tsx                    # Main dashboard
 │   └── globals.css                 # Tailwind imports
@@ -53,22 +55,22 @@ Dad_Aura/
 │   ├── AuraScore.tsx               # Large current score display
 │   ├── AuraTrends.tsx              # Chart components (today, 7d, 30d)
 │   ├── ActivityFeed.tsx            # Recent aura events list
-│   ├── EmojiPicker.tsx             # Emoji selection UI (future)
+│   ├── DadFlipButton.tsx           # Flip the score button
+│   ├── FlipConfigPanel.tsx         # Flip settings
 │   └── ui/                         # Reusable UI components
 ├── lib/
 │   ├── supabase.ts                 # Supabase client setup
 │   ├── aura-calculator.ts          # Compute totals and trends
 │   ├── emoji-parser.ts             # Parse SMS text for emoji + points
-│   └── twilio.ts                   # Twilio client setup
+│   └── flip-manager.ts             # Flip logic
 ├── types/
-│   ├── supabase.ts                 # Generated Supabase types
 │   └── aura.ts                     # App-specific types
 ├── supabase/
 │   └── schema.sql                  # Database schema
 ├── public/
-│   └── emoji/                      # Emoji assets (if needed)
+│   └── favicon.svg                 # App icon
 ├── .env.local                      # Local environment variables
-├── .env.example                    # Template for env vars
+├── env.example                     # Template for env vars
 ├── next.config.js                  # Next.js configuration
 ├── tailwind.config.js              # Tailwind configuration
 ├── tsconfig.json                   # TypeScript configuration
@@ -84,10 +86,10 @@ Required in `.env.local`:
 NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
-# Twilio (for SMS receiving)
-TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-TWILIO_AUTH_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-TWILIO_PHONE_NUMBER=+1234567890
+# Vonage (for SMS receiving)
+VONAGE_API_KEY=your_api_key
+VONAGE_API_SECRET=your_api_secret
+VONAGE_PHONE_NUMBER=+1234567890
 
 # Optional: for development
 NEXT_PUBLIC_APP_URL=http://localhost:3000
@@ -144,13 +146,13 @@ supabase
   .subscribe()
 ```
 
-### 4. Twilio Webhook (`app/api/sms-webhook/route.ts`)
+### 4. Vonage Webhook (`app/api/sms-webhook/route.ts`)
 
-Receives POST requests from Twilio when SMS arrives:
-- Extract message body and sender
-- Parse emoji + points
+Receives POST requests from Vonage when SMS arrives:
+- Vonage sends JSON: `{ text, msisdn, to, messageId }`
+- Parse emoji + points from `text` field
 - Store in Supabase
-- Return TwiML response (optional)
+- Return JSON response (200 OK to acknowledge)
 
 ## Emoji Presets
 
@@ -203,20 +205,21 @@ const EMOJI_PRESETS = {
 
 - Server runs on `http://localhost:3000`
 - Supabase project: Create at https://supabase.com
-- Twilio setup:
-  1. Buy phone number at https://console.twilio.com
-  2. Configure webhook URL: `https://your-domain.vercel.app/api/sms-webhook`
-  3. Set HTTP POST method
+- Vonage setup:
+  1. Create account at https://dashboard.nexmo.com
+  2. Buy a virtual number
+  3. Configure inbound SMS webhook URL: `https://your-domain.vercel.app/api/sms-webhook`
+  4. Set HTTP POST method with JSON format
 - For local SMS testing, use ngrok to expose localhost:
   ```bash
   ngrok http 3000
-  # Use ngrok URL for Twilio webhook during development
+  # Use ngrok URL for Vonage webhook during development
   ```
 
 ## Testing
 
 ### Manual SMS Testing
-Send test messages to Twilio number:
+Send test messages to your Vonage number:
 - "🔥 +10"
 - "-5 💩"
 - "🎉 +15 Great job dad!"
@@ -230,6 +233,11 @@ curl -X POST http://localhost:3000/api/aura \
 
 # Get all aura events
 curl http://localhost:3000/api/aura
+
+# Test Vonage webhook locally
+curl -X POST http://localhost:3000/api/sms-webhook \
+  -H "Content-Type: application/json" \
+  -d '{"text":"🔥 +10","msisdn":"15551234567","to":"15559876543","messageId":"test123"}'
 ```
 
 ## Troubleshooting
@@ -239,11 +247,11 @@ curl http://localhost:3000/api/aura
 - Check Supabase project is not paused
 - Ensure RLS policies allow anonymous access (or disable for MVP)
 
-### Twilio Webhook Not Receiving
-- Verify webhook URL is correct in Twilio console
-- Check webhook is set to HTTP POST
+### Vonage Webhook Not Receiving
+- Verify webhook URL is correct in Vonage dashboard
+- Check webhook is set to HTTP POST with JSON format
 - Use ngrok for local testing
-- Check Twilio logs for delivery failures
+- Check Vonage logs for delivery failures (Dashboard → Logs)
 
 ### Real-Time Updates Not Working
 - Ensure Supabase real-time is enabled for `aura_events` table
@@ -256,9 +264,9 @@ curl http://localhost:3000/api/aura
 2. Create Supabase project and run schema.sql
 3. Configure environment variables in Vercel
 4. Deploy to Vercel: `vercel --prod`
-5. Update Twilio webhook URL to production domain
+5. Update Vonage webhook URL to production domain
 6. Test end-to-end with real SMS
 
 ---
 
-**Last Updated:** 2025-12-10
+**Last Updated:** 2025-12-12

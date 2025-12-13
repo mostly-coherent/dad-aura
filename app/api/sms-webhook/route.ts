@@ -2,34 +2,45 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { parseSMS } from '@/lib/emoji-parser';
 
-// Use Edge runtime for faster cold starts on Twilio webhooks
+// Use Edge runtime for faster cold starts on webhooks
 export const runtime = 'edge';
 
 /**
  * POST /api/sms-webhook
- * Twilio webhook handler for incoming SMS messages
+ * Vonage webhook handler for incoming SMS messages
  * 
- * Twilio sends POST requests with form-encoded data:
- * - Body: The text of the message
- * - From: The phone number that sent the message
- * - To: Your Twilio phone number
+ * Vonage sends POST requests with JSON data:
+ * - text: The text of the message
+ * - msisdn: The phone number that sent the message (sender)
+ * - to: Your Vonage virtual number
+ * - messageId: Unique message identifier
+ * 
+ * Vonage Webhook Docs: https://developer.vonage.com/en/messaging/sms/guides/inbound-sms
  */
 export async function POST(request: NextRequest) {
   try {
-    // Parse form data from Twilio
-    const formData = await request.formData();
-    const messageBody = formData.get('Body') as string;
-    const fromNumber = formData.get('From') as string;
+    // Vonage sends JSON by default
+    const body = await request.json();
     
-    console.log('Received SMS:', { from: fromNumber, body: messageBody });
+    // Vonage inbound SMS fields
+    const messageBody = body.text as string;
+    const fromNumber = body.msisdn as string;
+    const toNumber = body.to as string;
+    const messageId = body.messageId as string;
+    
+    console.log('Received SMS from Vonage:', { 
+      messageId,
+      from: fromNumber, 
+      to: toNumber,
+      body: messageBody 
+    });
     
     if (!messageBody) {
-      return new NextResponse(
-        '<?xml version="1.0" encoding="UTF-8"?><Response><Message>No message body received</Message></Response>',
-        {
-          status: 400,
-          headers: { 'Content-Type': 'text/xml' },
-        }
+      console.log('No message body received');
+      // Vonage expects 200 OK to acknowledge receipt
+      return NextResponse.json(
+        { status: 'error', message: 'No message body received' },
+        { status: 200 }
       );
     }
     
@@ -38,13 +49,13 @@ export async function POST(request: NextRequest) {
     
     if (!parsed) {
       console.log('Failed to parse SMS:', messageBody);
-      return new NextResponse(
-        `<?xml version="1.0" encoding="UTF-8"?><Response><Message>Could not parse aura update. Try: "🔥 +10" or "💩 -5"</Message></Response>`,
-        {
-          status: 200,
-          headers: { 'Content-Type': 'text/xml' },
-        }
-      );
+      // Acknowledge receipt but note parsing failure
+      // To send a reply, you'd use Vonage Messages API separately
+      return NextResponse.json({
+        status: 'parse_error',
+        message: 'Could not parse aura update',
+        hint: 'Try: "🔥 +10" or "💩 -5"'
+      });
     }
     
     // Store the aura event in the database
@@ -64,55 +75,53 @@ export async function POST(request: NextRequest) {
     
     if (error) {
       console.error('Error storing aura event:', error);
-      return new NextResponse(
-        '<?xml version="1.0" encoding="UTF-8"?><Response><Message>Error saving aura update</Message></Response>',
-        {
-          status: 500,
-          headers: { 'Content-Type': 'text/xml' },
-        }
+      return NextResponse.json(
+        { status: 'error', message: 'Error saving aura update' },
+        { status: 200 } // Still 200 to acknowledge receipt
       );
     }
     
     console.log('Aura event created:', data);
     
-    // Calculate new total (optional - could query from DB)
+    // Calculate new total
     const { data: allEvents } = await supabase
       .from('aura_events')
       .select('points');
     
     const currentTotal = allEvents?.reduce((sum, e) => sum + e.points, 0) || 0;
     
-    // Send TwiML response to confirm
-    const responseMessage = `${parsed.emoji} ${parsed.points > 0 ? '+' : ''}${parsed.points} recorded! Dad's aura: ${currentTotal}`;
+    // Return success response
+    // Note: Vonage inbound webhooks don't support inline replies
+    // To send an SMS reply, use the Vonage Messages API separately
+    return NextResponse.json({
+      status: 'success',
+      event: {
+        emoji: parsed.emoji,
+        points: parsed.points,
+        note: parsed.note,
+      },
+      currentTotal,
+      message: `${parsed.emoji} ${parsed.points > 0 ? '+' : ''}${parsed.points} recorded! Dad's aura: ${currentTotal}`
+    });
     
-    return new NextResponse(
-      `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${responseMessage}</Message></Response>`,
-      {
-        status: 200,
-        headers: { 'Content-Type': 'text/xml' },
-      }
-    );
   } catch (error) {
     console.error('Unexpected error in SMS webhook:', error);
-    return new NextResponse(
-      '<?xml version="1.0" encoding="UTF-8"?><Response><Message>Error processing aura update</Message></Response>',
-      {
-        status: 500,
-        headers: { 'Content-Type': 'text/xml' },
-      }
+    // Always return 200 to Vonage to prevent retries
+    return NextResponse.json(
+      { status: 'error', message: 'Error processing aura update' },
+      { status: 200 }
     );
   }
 }
 
 /**
  * GET /api/sms-webhook
- * Health check endpoint
+ * Health check endpoint (also used by Vonage for webhook validation)
  */
 export async function GET() {
   return NextResponse.json({
     status: 'ok',
-    message: 'SMS webhook is ready',
+    message: 'SMS webhook is ready (Vonage)',
     timestamp: new Date().toISOString(),
   });
 }
-
