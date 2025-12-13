@@ -9,6 +9,7 @@ import AuraTrends from '@/components/AuraTrends';
 import ActivityFeed from '@/components/ActivityFeed';
 import DadFlipButton from '@/components/DadFlipButton';
 import FlipConfigPanel from '@/components/FlipConfigPanel';
+import EmojiGuide from '@/components/EmojiGuide';
 
 export default function Home() {
   const [stats, setStats] = useState<AuraStats | null>(null);
@@ -135,12 +136,14 @@ export default function Home() {
 
         {/* Activity Feed */}
         <ActivityFeed events={stats.recentEvents} />
+
+        {/* Emoji Guide */}
+        <EmojiGuide />
       </div>
 
       {/* Footer */}
       <footer className="mt-12 text-center text-gray-600 dark:text-gray-400 text-sm">
-        <p>Send emoji + points via SMS to update Dad&apos;s aura</p>
-        <p className="mt-1">Example: &quot;🔥 +10&quot; or &quot;💩 -5&quot;</p>
+        <p>Tap the Emoji Guide above to see all supported emojis!</p>
       </footer>
     </main>
   );
