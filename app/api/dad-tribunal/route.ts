@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Return the stream for real-time updates
-    return result.toTextStreamResponse();
+    return result.toDataStreamResponse();
     
   } catch (error) {
     console.error('Dad Tribunal error:', error);
@@ -105,13 +105,15 @@ export async function PUT(request: NextRequest) {
     }
 
     // Store the verdict as an aura event
+    // Note: Using 'web' as source since database constraint limits values
+    // The note field contains "THE DAD TRIBUNAL" to identify tribunal verdicts
     const { data, error } = await supabase
       .from('aura_events')
       .insert([
         {
           emoji,
           points,
-          source: 'tribunal',
+          source: 'web',
           note,
           timestamp: new Date().toISOString(),
         },
