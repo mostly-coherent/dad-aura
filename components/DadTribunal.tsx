@@ -18,23 +18,51 @@ interface Verdict {
 
 export default function DadTribunal({ onVerdictSaved }: DadTribunalProps) {
   const [currentVerdict, setCurrentVerdict] = useState<Verdict | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
   const [showSavedMessage, setShowSavedMessage] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const { messages, input, handleInputChange, handleSubmit, isLoading, setMessages } = useChat({
     api: '/api/dad-tribunal',
-    onFinish: (message) => {
+    onFinish: async (message) => {
       // Parse the verdict from the AI response
       try {
-        // Extract JSON from the response (it might have extra text)
-        const jsonMatch = message.content.match(/\{[\s\S]*\}/);
+        // Clean the content - remove markdown code blocks if present
+        let content = message.content;
+        content = content.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
+        
+        // Extract JSON from the response
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const verdict = JSON.parse(jsonMatch[0]) as Verdict;
           setCurrentVerdict(verdict);
+          
+          // Auto-save the verdict immediately
+          try {
+            const response = await fetch('/api/dad-tribunal', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(verdict),
+            });
+            
+            if (response.ok) {
+              setShowSavedMessage(true);
+              setTimeout(() => {
+                setShowSavedMessage(false);
+                setCurrentVerdict(null);
+                setMessages([]);
+              }, 3000);
+              onVerdictSaved();
+            } else {
+              console.error('Failed to save verdict:', await response.text());
+            }
+          } catch (saveError) {
+            console.error('Error saving verdict:', saveError);
+          }
+        } else {
+          console.error('No JSON found in response:', content);
         }
       } catch (error) {
-        console.error('Failed to parse verdict:', error);
+        console.error('Failed to parse verdict:', error, 'Content:', message.content);
       }
     },
   });
@@ -46,38 +74,6 @@ export default function DadTribunal({ onVerdictSaved }: DadTribunalProps) {
       inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 120)}px`;
     }
   }, [input]);
-
-  async function saveVerdict() {
-    if (!currentVerdict) return;
-
-    setIsSaving(true);
-    try {
-      const response = await fetch('/api/dad-tribunal', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(currentVerdict),
-      });
-
-      if (response.ok) {
-        setShowSavedMessage(true);
-        setTimeout(() => {
-          setShowSavedMessage(false);
-          setCurrentVerdict(null);
-          setMessages([]);
-        }, 2000);
-        onVerdictSaved();
-      }
-    } catch (error) {
-      console.error('Failed to save verdict:', error);
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
-  function discardVerdict() {
-    setCurrentVerdict(null);
-    setMessages([]);
-  }
 
   const lastAssistantMessage = messages.filter(m => m.role === 'assistant').pop();
 
@@ -137,31 +133,12 @@ export default function DadTribunal({ onVerdictSaved }: DadTribunalProps) {
             </div>
           )}
 
-          {/* Verdict Actions */}
+          {/* Auto-saving indicator */}
           {currentVerdict && !showSavedMessage && (
-            <div className="mb-4 bg-amber-100 rounded-lg p-4 border-2 border-amber-400">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <button
-                  onClick={saveVerdict}
-                  disabled={isSaving}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-4 rounded-lg transition-colors focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50"
-                >
-                  {isSaving ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="animate-spin">⏳</span> Saving...
-                    </span>
-                  ) : (
-                    <span>✅ Accept Verdict ({currentVerdict.points > 0 ? '+' : ''}{currentVerdict.points} points)</span>
-                  )}
-                </button>
-                <button
-                  onClick={discardVerdict}
-                  disabled={isSaving}
-                  className="flex-1 sm:flex-none bg-gray-500 hover:bg-gray-600 text-white font-bold py-2.5 px-4 rounded-lg transition-colors focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-                >
-                  ❌ Dismiss
-                </button>
-              </div>
+            <div className="mb-4 bg-amber-100 rounded-lg p-4 border-2 border-amber-400 text-center">
+              <span className="flex items-center justify-center gap-2 text-amber-800 font-medium">
+                <span className="animate-spin">⏳</span> Saving verdict to Dad&apos;s aura...
+              </span>
             </div>
           )}
 
