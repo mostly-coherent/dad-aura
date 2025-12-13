@@ -25,7 +25,7 @@ Your Dad Aura app is ready to go! Here's what to do next:
 
 ### 2. Test Locally (2 minutes)
 ```bash
-cd /Users/jmbeh/Builder_Lab/dad-aura
+cd /Users/jmbeh/Personal Builder Lab/dad-aura
 npm run dev
 ```
 Open http://localhost:3000
