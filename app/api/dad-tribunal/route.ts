@@ -50,14 +50,27 @@ Be entertaining but fair. You're here to make this fun while genuinely tracking 
 
 export async function POST(request: NextRequest) {
   try {
-    const { message } = await request.json();
-
-    if (!message || typeof message !== 'string') {
+    const body = await request.json();
+    
+    // useChat sends { messages: [...] }, extract the last user message
+    const messages = body.messages;
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return new Response(
-        JSON.stringify({ error: 'Message is required' }),
+        JSON.stringify({ error: 'Messages array is required' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
+
+    // Get the last user message
+    const lastUserMessage = messages.filter((m: { role: string }) => m.role === 'user').pop();
+    if (!lastUserMessage || !lastUserMessage.content) {
+      return new Response(
+        JSON.stringify({ error: 'No user message found' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userContent = lastUserMessage.content;
 
     const result = await streamText({
       model: openai('gpt-4o'),
@@ -65,7 +78,7 @@ export async function POST(request: NextRequest) {
       messages: [
         {
           role: 'user',
-          content: `My son says: "${message}"\n\nPlease evaluate this dad behavior and respond with your verdict in the required JSON format.`,
+          content: `My son says: "${userContent}"\n\nPlease evaluate this dad behavior and respond with your verdict in the required JSON format.`,
         },
       ],
       maxTokens: 500,
