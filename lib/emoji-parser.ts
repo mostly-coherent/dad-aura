@@ -2,42 +2,140 @@ import { ParsedSMS, EmojiPreset } from '@/types/aura';
 
 // Emoji presets with default point values
 export const EMOJI_PRESETS: Record<string, number> = {
-  // Positive
-  '🔥': 10,
-  '🎉': 15,
-  '❤️': 5,
-  '🌟': 8,
-  '💪': 7,
-  '👍': 3,
-  '⚡': 25,
-  '🎯': 20,
-  // Negative
-  '💩': -5,
-  '😤': -8,
-  '👎': -3,
-  '😡': -10,
-  '🙄': -4,
-  '💔': -12,
-  // Neutral
-  '🤷': 0,
+  // === LEGENDARY (20-25 points) ===
+  '💯': 25,      // Perfect!
+  '⚡': 25,      // Legendary move
+  '🏆': 20,      // Trophy dad
+  '👑': 20,      // King dad
+  '🥇': 20,      // Gold medal
+  '🎯': 20,      // Bullseye
+  
+  // === AWESOME (10-15 points) ===
+  '🎉': 15,      // Epic celebration
+  '🙌': 15,      // Raised hands praise
+  '🤩': 12,      // Star-struck
+  '🌈': 12,      // Rainbow vibes
+  '🎂': 12,      // Birthday/special
+  '🔥': 10,      // Fire/awesome
+  '⭐': 10,      // Star
+  '🥳': 10,      // Party face
+  
+  // === GOOD (5-9 points) ===
+  '🎁': 8,       // Gift
+  '🌟': 8,       // Glowing star
+  '😍': 8,       // Heart eyes
+  '🥰': 8,       // Smiling with hearts
+  '💖': 7,       // Sparkling heart
+  '💪': 7,       // Strong
+  '🤗': 6,       // Hugging
+  '😄': 6,       // Grinning
+  '👏': 6,       // Clapping
+  '💕': 6,       // Two hearts
+  '❤️': 5,       // Heart
+  '😊': 5,       // Smiling
+  '🙏': 5,       // Thank you
+  '🎮': 5,       // Gaming together
+  '🎵': 4,       // Music
+  '🍦': 4,       // Ice cream treat
+  '☕': 4,       // Coffee/chill time
+  
+  // === OKAY (1-3 points) ===
+  '👍': 3,       // Thumbs up
+  '🍕': 3,       // Pizza time
+  '😎': 3,       // Cool
+  '🤝': 3,       // Handshake/deal
+  '😀': 2,       // Basic smile
+  '🙂': 1,       // Slight smile
+  
+  // === NEUTRAL (0 points) ===
+  '🤷': 0,       // Meh
+  '😐': 0,       // Neutral face
+  '🤔': 0,       // Thinking
+  
+  // === MILD NEGATIVE (-1 to -5 points) ===
+  '🥺': -2,      // Pleading/puppy eyes
+  '👎': -3,      // Thumbs down
+  '😒': -4,      // Unamused
+  '🙄': -4,      // Eye roll
+  '😔': -4,      // Sad
+  '😞': -5,      // Disappointed
+  '💩': -5,      // Poop
+  '😢': -5,      // Crying
+  
+  // === NEGATIVE (-6 to -10 points) ===
+  '😫': -6,      // Tired of this
+  '😩': -6,      // Weary
+  '😭': -7,      // Sobbing
+  '😤': -8,      // Frustrated
+  '💢': -8,      // Anger symbol
+  '😡': -10,     // Angry face
+  
+  // === SEVERE (-12 to -15 points) ===
+  '💔': -12,     // Heartbroken
+  '🤬': -15,     // Cursing mad
 };
 
 export const EMOJI_PRESET_LIST: EmojiPreset[] = [
-  { emoji: '🔥', points: 10, label: 'Awesome dad moment' },
-  { emoji: '🎉', points: 15, label: 'Epic dad win' },
-  { emoji: '❤️', points: 5, label: 'Love you dad' },
-  { emoji: '🌟', points: 8, label: "You're shining" },
-  { emoji: '💪', points: 7, label: 'Strong dad energy' },
-  { emoji: '👍', points: 3, label: 'Good job' },
+  // Legendary
+  { emoji: '💯', points: 25, label: 'Perfect!' },
   { emoji: '⚡', points: 25, label: 'Legendary move' },
-  { emoji: '🎯', points: 20, label: 'Bullseye, perfect' },
-  { emoji: '💩', points: -5, label: 'Mild disappointment' },
-  { emoji: '😤', points: -8, label: 'Annoyed' },
+  { emoji: '🏆', points: 20, label: 'Trophy dad' },
+  { emoji: '👑', points: 20, label: 'King dad' },
+  { emoji: '🥇', points: 20, label: 'Gold medal' },
+  { emoji: '🎯', points: 20, label: 'Bullseye' },
+  // Awesome
+  { emoji: '🎉', points: 15, label: 'Epic celebration' },
+  { emoji: '🙌', points: 15, label: 'Praise!' },
+  { emoji: '🤩', points: 12, label: 'Star-struck' },
+  { emoji: '🌈', points: 12, label: 'Rainbow vibes' },
+  { emoji: '🎂', points: 12, label: 'Special day' },
+  { emoji: '🔥', points: 10, label: 'Fire!' },
+  { emoji: '⭐', points: 10, label: 'Star' },
+  { emoji: '🥳', points: 10, label: 'Party!' },
+  // Good
+  { emoji: '🎁', points: 8, label: 'Gift' },
+  { emoji: '🌟', points: 8, label: 'Shining' },
+  { emoji: '😍', points: 8, label: 'Heart eyes' },
+  { emoji: '🥰', points: 8, label: 'Love' },
+  { emoji: '💖', points: 7, label: 'Sparkling heart' },
+  { emoji: '💪', points: 7, label: 'Strong' },
+  { emoji: '🤗', points: 6, label: 'Hugs' },
+  { emoji: '😄', points: 6, label: 'Grinning' },
+  { emoji: '👏', points: 6, label: 'Clapping' },
+  { emoji: '💕', points: 6, label: 'Hearts' },
+  { emoji: '❤️', points: 5, label: 'Love you' },
+  { emoji: '😊', points: 5, label: 'Smiling' },
+  { emoji: '🙏', points: 5, label: 'Thank you' },
+  { emoji: '🎮', points: 5, label: 'Gaming' },
+  { emoji: '🎵', points: 4, label: 'Music' },
+  { emoji: '🍦', points: 4, label: 'Ice cream' },
+  { emoji: '☕', points: 4, label: 'Coffee time' },
+  { emoji: '👍', points: 3, label: 'Good job' },
+  { emoji: '🍕', points: 3, label: 'Pizza!' },
+  { emoji: '😎', points: 3, label: 'Cool' },
+  // Neutral
+  { emoji: '🤷', points: 0, label: 'Meh' },
+  { emoji: '😐', points: 0, label: 'Neutral' },
+  { emoji: '🤔', points: 0, label: 'Thinking' },
+  // Mild negative
+  { emoji: '🥺', points: -2, label: 'Puppy eyes' },
   { emoji: '👎', points: -3, label: 'Not cool' },
-  { emoji: '😡', points: -10, label: 'Dad fail' },
-  { emoji: '🙄', points: -4, label: 'Seriously?' },
-  { emoji: '💔', points: -12, label: 'Really hurt' },
-  { emoji: '🤷', points: 0, label: 'Meh, neutral' },
+  { emoji: '😒', points: -4, label: 'Unamused' },
+  { emoji: '🙄', points: -4, label: 'Eye roll' },
+  { emoji: '😔', points: -4, label: 'Sad' },
+  { emoji: '😞', points: -5, label: 'Disappointed' },
+  { emoji: '💩', points: -5, label: 'Poop' },
+  { emoji: '😢', points: -5, label: 'Crying' },
+  // Negative
+  { emoji: '😫', points: -6, label: 'Tired of this' },
+  { emoji: '😩', points: -6, label: 'Weary' },
+  { emoji: '😭', points: -7, label: 'Sobbing' },
+  { emoji: '😤', points: -8, label: 'Frustrated' },
+  { emoji: '💢', points: -8, label: 'Angry' },
+  { emoji: '😡', points: -10, label: 'Mad' },
+  // Severe
+  { emoji: '💔', points: -12, label: 'Heartbroken' },
+  { emoji: '🤬', points: -15, label: 'Furious' },
 ];
 
 /**
