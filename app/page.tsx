@@ -71,10 +71,10 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center px-4">
         <div className="text-center">
-          <div className="text-6xl mb-4 animate-bounce">🔥</div>
-          <div className="text-xl font-semibold text-gray-600 dark:text-gray-400">
+          <div className="text-5xl sm:text-6xl mb-4 animate-bounce" role="img" aria-label="Loading">🔥</div>
+          <div className="text-lg sm:text-xl font-semibold text-gray-700 dark:text-gray-300">
             Loading Dad Aura...
           </div>
         </div>
@@ -84,16 +84,16 @@ export default function Home() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6">
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-8 max-w-md">
-          <div className="text-6xl mb-4 text-center">⚠️</div>
-          <h2 className="text-xl font-bold text-red-800 dark:text-red-200 mb-2">
+      <div className="min-h-screen flex items-center justify-center p-4 sm:p-6">
+        <div className="bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg p-6 sm:p-8 max-w-md w-full">
+          <div className="text-5xl sm:text-6xl mb-4 text-center" role="img" aria-label="Error">⚠️</div>
+          <h2 className="text-lg sm:text-xl font-bold text-red-800 dark:text-red-200 mb-2">
             Error Loading Data
           </h2>
-          <p className="text-red-600 dark:text-red-300 mb-4">{error}</p>
+          <p className="text-red-700 dark:text-red-300 mb-4 text-sm sm:text-base">{error}</p>
           <button
             onClick={fetchAuraData}
-            className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+            className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
           >
             Retry
           </button>
@@ -107,12 +107,14 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen pb-12">
+    <main className="min-h-screen pb-8 sm:pb-12">
       {/* Header */}
-      <header className="bg-gradient-to-r from-purple-600 to-blue-600 text-white py-6 px-6 shadow-lg">
+      <header className="bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 sm:py-6 px-4 sm:px-6 shadow-lg">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-4xl font-bold mb-2">Dad Aura 🔥</h1>
-          <p className="text-lg opacity-90">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2 drop-shadow-sm">
+            Dad Aura <span role="img" aria-hidden="true">🔥</span>
+          </h1>
+          <p className="text-sm sm:text-base md:text-lg text-white/95 drop-shadow-sm">
             Real-time dad performance tracking
           </p>
         </div>
@@ -142,10 +144,9 @@ export default function Home() {
       </div>
 
       {/* Footer */}
-      <footer className="mt-12 text-center text-gray-600 dark:text-gray-400 text-sm">
+      <footer className="mt-8 sm:mt-12 text-center text-gray-700 dark:text-gray-300 text-xs sm:text-sm px-4">
         <p>Tap the Emoji Guide above to see all supported emojis!</p>
       </footer>
     </main>
   );
 }
-

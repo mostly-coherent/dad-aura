@@ -25,90 +25,114 @@ export default function AuraTrends({ last7Days, last30Days }: AuraTrendsProps) {
   
   
   return (
-    <div className="space-y-8 px-6 py-8">
+    <div className="space-y-6 sm:space-y-8 px-4 sm:px-6 py-6 sm:py-8">
       {/* 7-Day Trend */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-        <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-white">
-          📊 Last 7 Days
+      <section 
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-6"
+        aria-label="Last 7 days trend chart"
+      >
+        <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-gray-900 dark:text-white">
+          <span aria-hidden="true">📊 </span>Last 7 Days
         </h2>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={format7Days}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip
-              content={({ active, payload }) => {
-                if (active && payload && payload.length) {
-                  return (
-                    <div className="bg-white dark:bg-gray-700 p-3 rounded shadow-lg border border-gray-200 dark:border-gray-600">
-                      <p className="font-semibold">{payload[0].payload.date}</p>
-                      <p className={`${payload[0].value as number > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        Points: {payload[0].value}
-                      </p>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">
-                        Events: {payload[0].payload.events}
-                      </p>
-                    </div>
-                  );
-                }
-                return null;
-              }}
-            />
-            <ReferenceLine y={0} stroke="#666" />
-            <Bar
-              dataKey="total"
-              fill="#60A5FA"
-              radius={[8, 8, 0, 0]}
-            />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+        <div className="h-[200px] sm:h-[250px] md:h-[300px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={format7Days} margin={{ top: 5, right: 5, left: -10, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+              <XAxis 
+                dataKey="date" 
+                tick={{ fill: '#4B5563', fontSize: 12 }}
+                tickLine={{ stroke: '#4B5563' }}
+              />
+              <YAxis 
+                tick={{ fill: '#4B5563', fontSize: 12 }}
+                tickLine={{ stroke: '#4B5563' }}
+                width={40}
+              />
+              <Tooltip
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    const value = payload[0].value as number;
+                    return (
+                      <div className="bg-white dark:bg-gray-700 p-3 rounded shadow-lg border border-gray-300 dark:border-gray-600">
+                        <p className="font-semibold text-gray-900 dark:text-white">{payload[0].payload.date}</p>
+                        <p className={`font-medium ${value > 0 ? 'text-green-700 dark:text-green-400' : value < 0 ? 'text-red-700 dark:text-red-400' : 'text-gray-700 dark:text-gray-300'}`}>
+                          Points: {value > 0 ? '+' : ''}{value}
+                        </p>
+                        <p className="text-gray-700 dark:text-gray-300 text-sm">
+                          Events: {payload[0].payload.events}
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <ReferenceLine y={0} stroke="#6B7280" strokeWidth={1} />
+              <Bar
+                dataKey="total"
+                fill="#60A5FA"
+                radius={[6, 6, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
       
       {/* 30-Day Cumulative Trend */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-        <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-white">
-          📈 Last 30 Days (Daily Points)
+      <section 
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-6"
+        aria-label="Last 30 days trend chart"
+      >
+        <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-gray-900 dark:text-white">
+          <span aria-hidden="true">📈 </span>Last 30 Days
         </h2>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={format30Days}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis
-              dataKey="date"
-              tick={{ fontSize: 12 }}
-              interval="preserveStartEnd"
-            />
-            <YAxis />
-            <Tooltip
-              content={({ active, payload }) => {
-                if (active && payload && payload.length) {
-                  return (
-                    <div className="bg-white dark:bg-gray-700 p-3 rounded shadow-lg border border-gray-200 dark:border-gray-600">
-                      <p className="font-semibold">{payload[0].payload.date}</p>
-                      <p className={`${payload[0].value as number > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        Points: {payload[0].value}
-                      </p>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">
-                        Events: {payload[0].payload.events}
-                      </p>
-                    </div>
-                  );
-                }
-                return null;
-              }}
-            />
-            <ReferenceLine y={0} stroke="#666" />
-            <Line
-              type="monotone"
-              dataKey="total"
-              stroke="#4ADE80"
-              strokeWidth={2}
-              dot={{ fill: '#4ADE80', r: 4 }}
-              activeDot={{ r: 6 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+        <div className="h-[200px] sm:h-[250px] md:h-[300px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={format30Days} margin={{ top: 5, right: 5, left: -10, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+              <XAxis
+                dataKey="date"
+                tick={{ fill: '#4B5563', fontSize: 10 }}
+                tickLine={{ stroke: '#4B5563' }}
+                interval="preserveStartEnd"
+              />
+              <YAxis 
+                tick={{ fill: '#4B5563', fontSize: 12 }}
+                tickLine={{ stroke: '#4B5563' }}
+                width={40}
+              />
+              <Tooltip
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    const value = payload[0].value as number;
+                    return (
+                      <div className="bg-white dark:bg-gray-700 p-3 rounded shadow-lg border border-gray-300 dark:border-gray-600">
+                        <p className="font-semibold text-gray-900 dark:text-white">{payload[0].payload.date}</p>
+                        <p className={`font-medium ${value > 0 ? 'text-green-700 dark:text-green-400' : value < 0 ? 'text-red-700 dark:text-red-400' : 'text-gray-700 dark:text-gray-300'}`}>
+                          Points: {value > 0 ? '+' : ''}{value}
+                        </p>
+                        <p className="text-gray-700 dark:text-gray-300 text-sm">
+                          Events: {payload[0].payload.events}
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <ReferenceLine y={0} stroke="#6B7280" strokeWidth={1} />
+              <Line
+                type="monotone"
+                dataKey="total"
+                stroke="#4ADE80"
+                strokeWidth={2}
+                dot={{ fill: '#4ADE80', r: 3 }}
+                activeDot={{ r: 5 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
     </div>
   );
 }
-

@@ -189,10 +189,10 @@ function getFirstEmoji(str: string): string {
   // Note: Not available in Edge runtime, so we have a robust fallback
   if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
     try {
-      const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
-      const segments = segmenter.segment(trimmed);
-      const first = segments[Symbol.iterator]().next().value;
-      return first?.segment || '';
+    const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
+    const segments = segmenter.segment(trimmed);
+    const first = segments[Symbol.iterator]().next().value;
+    return first?.segment || '';
     } catch {
       // Fall through to fallback
     }

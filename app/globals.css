@@ -12,6 +12,12 @@
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
   }
+  
+  /* Improve default focus styles for accessibility */
+  *:focus-visible {
+    outline: 2px solid #7c3aed;
+    outline-offset: 2px;
+  }
 }
 
 @layer utilities {
@@ -26,7 +32,7 @@
     opacity: 1;
   }
   50% {
-    opacity: 0.8;
+    opacity: 0.85;
   }
 }
 
@@ -34,3 +40,24 @@
   animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
+/* Responsive container padding */
+@layer components {
+  .container-padding {
+    @apply px-4 sm:px-6;
+  }
+}
+
+/* High contrast text helpers */
+@layer utilities {
+  .text-high-contrast {
+    @apply text-gray-900 dark:text-gray-100;
+  }
+  
+  .text-medium-contrast {
+    @apply text-gray-700 dark:text-gray-300;
+  }
+  
+  .text-on-gradient {
+    @apply text-white drop-shadow-sm;
+  }
+}

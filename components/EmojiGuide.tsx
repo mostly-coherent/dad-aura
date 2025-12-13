@@ -19,28 +19,28 @@ export default function EmojiGuide() {
   ];
 
   return (
-    <section className="px-6 py-4" aria-label="Emoji guide for aura points">
+    <section className="px-4 sm:px-6 py-3 sm:py-4" aria-label="Emoji guide for aura points">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
         {/* Header - Always visible */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          className="w-full px-4 sm:px-6 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors focus:ring-2 focus:ring-purple-500 focus:ring-inset"
           aria-expanded={isExpanded}
           aria-controls="emoji-guide-content"
         >
-          <div className="flex items-center gap-3">
-            <span className="text-2xl" role="img" aria-hidden="true">📱</span>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="text-xl sm:text-2xl" role="img" aria-hidden="true">📱</span>
             <div className="text-left">
-              <h2 className="text-lg font-bold text-gray-800 dark:text-white">
+              <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
                 Emoji Guide
               </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                 Text these emojis to update Dad&apos;s aura
               </p>
             </div>
           </div>
           <span 
-            className={`text-2xl transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+            className={`text-xl sm:text-2xl transition-transform duration-200 text-gray-600 dark:text-gray-400 ${isExpanded ? 'rotate-180' : ''}`}
             aria-hidden="true"
           >
             ▼
@@ -49,11 +49,11 @@ export default function EmojiGuide() {
 
         {/* Expandable content */}
         {isExpanded && (
-          <div id="emoji-guide-content" className="px-6 pb-6 space-y-4">
+          <div id="emoji-guide-content" className="px-4 sm:px-6 pb-4 sm:pb-6 space-y-3 sm:space-y-4">
             {/* Quick tip */}
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-sm" role="note">
-              <span className="font-semibold text-blue-800 dark:text-blue-200" aria-hidden="true">💡 </span>
-              <span className="font-semibold text-blue-800 dark:text-blue-200">Tip:</span>
+            <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3 text-sm" role="note">
+              <span className="font-semibold text-blue-800 dark:text-blue-300" aria-hidden="true">💡 </span>
+              <span className="font-semibold text-blue-800 dark:text-blue-300">Tip:</span>
               <span className="text-blue-700 dark:text-blue-300 ml-1">
                 Send just the emoji, or add custom points like &quot;😀 +7&quot;
               </span>
@@ -67,21 +67,21 @@ export default function EmojiGuide() {
                     <div className={`bg-gradient-to-r ${tier.color} text-white text-xs font-bold px-2 py-1 rounded-full`}>
                       {tier.range}
                     </div>
-                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
                       {tier.name}
                     </span>
                   </div>
-                  <div className="flex flex-wrap gap-2" role="list">
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2" role="list">
                     {tier.emojis.map((preset) => (
                       <div
                         key={preset.emoji}
-                        className="group relative flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg px-2 py-1 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors cursor-default"
+                        className="group relative flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg px-1.5 sm:px-2 py-1 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors cursor-default"
                         role="listitem"
                         aria-label={`${preset.label}: ${preset.points > 0 ? 'plus' : preset.points < 0 ? 'minus' : ''} ${Math.abs(preset.points)} points`}
                       >
-                        <span className="text-xl" role="img" aria-hidden="true">{preset.emoji}</span>
+                        <span className="text-lg sm:text-xl" role="img" aria-hidden="true">{preset.emoji}</span>
                         <span 
-                          className={`text-xs font-bold ${preset.points > 0 ? 'text-green-600 dark:text-green-400' : preset.points < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500'}`}
+                          className={`text-xs font-bold ${preset.points > 0 ? 'text-green-700 dark:text-green-400' : preset.points < 0 ? 'text-red-700 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`}
                           aria-hidden="true"
                         >
                           {preset.points > 0 ? '+' : ''}{preset.points}
@@ -95,8 +95,8 @@ export default function EmojiGuide() {
 
             {/* Phone number reminder */}
             <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Text to: <span className="font-mono font-bold text-purple-600 dark:text-purple-400">Your Vonage Number</span>
+              <p className="text-sm text-gray-700 dark:text-gray-300">
+                Text to: <span className="font-mono font-bold text-purple-700 dark:text-purple-400">Your Vonage Number</span>
               </p>
             </div>
           </div>
@@ -105,4 +105,3 @@ export default function EmojiGuide() {
     </section>
   );
 }
-
