@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { AuraEvent, AuraStats } from '@/types/aura';
 import { calculateAuraStats } from '@/lib/aura-calculator';
 import AuraScore from '@/components/AuraScore';
+import DadTribunal from '@/components/DadTribunal';
 import AuraTrends from '@/components/AuraTrends';
 import ActivityFeed from '@/components/ActivityFeed';
 import DadFlipButton from '@/components/DadFlipButton';
@@ -124,6 +125,9 @@ export default function Home() {
         {/* Aura Score */}
         <AuraScore total={stats.currentTotal} todayTotal={stats.todayTotal} />
 
+        {/* THE DAD TRIBUNAL - AI Judge (Prominently positioned!) */}
+        <DadTribunal onVerdictSaved={fetchAuraData} />
+
         {/* Dad Flip Button */}
         <DadFlipButton 
           currentTotal={stats.currentTotal} 
@@ -139,13 +143,13 @@ export default function Home() {
         {/* Activity Feed */}
         <ActivityFeed events={stats.recentEvents} />
 
-        {/* Emoji Guide */}
+        {/* Emoji Guide (for SMS from Apple Watch) */}
         <EmojiGuide />
       </div>
 
       {/* Footer */}
       <footer className="mt-8 sm:mt-12 text-center text-gray-700 dark:text-gray-300 text-xs sm:text-sm px-4">
-        <p>Tap the Emoji Guide above to see all supported emojis!</p>
+        <p>Use The Dad Tribunal above, or text emojis from your Apple Watch!</p>
       </footer>
     </main>
   );
