@@ -1,4 +1,4 @@
-import { anthropic } from '@ai-sdk/anthropic';
+import { openai } from '@ai-sdk/openai';
 import { streamText } from 'ai';
 import { NextRequest } from 'next/server';
 import { supabase } from '@/lib/supabase';
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await streamText({
-      model: anthropic('claude-sonnet-4-20250514'),
+      model: openai('gpt-4o'),
       system: SYSTEM_PROMPT,
       messages: [
         {
