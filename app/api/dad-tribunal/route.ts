@@ -1,10 +1,11 @@
 import { openai } from '@ai-sdk/openai';
-import { streamText } from 'ai';
+import { anthropic } from '@ai-sdk/anthropic';
+import { generateText } from 'ai';
 import { NextRequest } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
-// Allow streaming responses up to 30 seconds
-export const maxDuration = 30;
+// Allow responses up to 60 seconds (need time for both LLM calls)
+export const maxDuration = 60;
 
 const SYSTEM_PROMPT = `You are "The Dad Tribunal" - a wise, witty, and slightly sarcastic AI judge who evaluates dad performance. You have deep knowledge of:
 
@@ -48,6 +49,61 @@ You MUST respond in this EXACT JSON format:
 
 Be entertaining but fair. You're here to make this fun while genuinely tracking dad's performance!`;
 
+const SAFETY_CHECK_PROMPT = `You are a content safety checker for a family app used by young teenagers (ages 10-15).
+
+Your job is to review AI-generated content and ensure it is:
+1. Age-appropriate for young teenagers
+2. Free from inappropriate language, violence, or adult themes
+3. Free from content that could be harmful, scary, or disturbing
+4. Positive and constructive even when giving negative feedback
+5. Free from any references that a young teen shouldn't see
+
+Review the following content that will be shown to a young teenager:
+
+---
+{CONTENT}
+---
+
+Respond with ONLY a JSON object in this exact format:
+{
+  "safe": true/false,
+  "reason": "Brief explanation if not safe, or 'Content is appropriate' if safe",
+  "sanitized": "If not safe, provide a sanitized version of the content. If safe, leave as null"
+}`;
+
+// Safety check using Anthropic Claude
+async function checkSafety(content: string): Promise<{
+  safe: boolean;
+  reason: string;
+  sanitized: string | null;
+}> {
+  try {
+    const result = await generateText({
+      model: anthropic('claude-3-haiku-20240307'),
+      prompt: SAFETY_CHECK_PROMPT.replace('{CONTENT}', content),
+      maxTokens: 500,
+    });
+
+    // Parse the safety check response
+    const jsonMatch = result.text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        safe: parsed.safe === true,
+        reason: parsed.reason || 'Unknown',
+        sanitized: parsed.sanitized || null,
+      };
+    }
+
+    // Default to safe if parsing fails
+    return { safe: true, reason: 'Parse error - defaulting to safe', sanitized: null };
+  } catch (error) {
+    console.error('Safety check error:', error);
+    // Default to safe if safety check fails (don't block the app)
+    return { safe: true, reason: 'Safety check unavailable', sanitized: null };
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -72,7 +128,9 @@ export async function POST(request: NextRequest) {
 
     const userContent = lastUserMessage.content;
 
-    const result = await streamText({
+    // Step 1: Generate verdict with OpenAI GPT-4o
+    console.log('Generating verdict with OpenAI...');
+    const tribunalResult = await generateText({
       model: openai('gpt-4o'),
       system: SYSTEM_PROMPT,
       messages: [
@@ -84,8 +142,43 @@ export async function POST(request: NextRequest) {
       maxTokens: 500,
     });
 
-    // Return the stream for real-time updates
-    return result.toDataStreamResponse();
+    const verdictText = tribunalResult.text;
+    console.log('Verdict generated:', verdictText.substring(0, 100) + '...');
+
+    // Step 2: Safety check with Anthropic Claude
+    console.log('Running safety check with Anthropic...');
+    const safetyResult = await checkSafety(verdictText);
+    console.log('Safety check result:', safetyResult);
+
+    // Step 3: Return the verdict (sanitized if needed)
+    let finalContent = verdictText;
+    let safetyNote = '';
+
+    if (!safetyResult.safe) {
+      console.log('Content flagged as unsafe, using sanitized version');
+      if (safetyResult.sanitized) {
+        finalContent = safetyResult.sanitized;
+        safetyNote = '\n\n🛡️ [This response was reviewed for safety]';
+      } else {
+        // If no sanitized version, provide a generic safe response
+        finalContent = JSON.stringify({
+          points: 0,
+          emoji: '🤔',
+          verdict: 'The Tribunal Needs More Information',
+          explanation: 'The Tribunal couldn\'t process this request properly. Please try describing what Dad did in a different way.',
+          dadJoke: null,
+          memeReference: null,
+        });
+        safetyNote = '\n\n🛡️ [Response regenerated for safety]';
+      }
+    }
+
+    // Return as a simple text response (useChat will handle it)
+    // We need to format it for useChat's expected format
+    return new Response(finalContent + safetyNote, {
+      status: 200,
+      headers: { 'Content-Type': 'text/plain' },
+    });
     
   } catch (error) {
     console.error('Dad Tribunal error:', error);
@@ -166,4 +259,3 @@ export async function PUT(request: NextRequest) {
     );
   }
 }
-
