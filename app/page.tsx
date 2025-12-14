@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { AuraEvent, AuraStats } from '@/types/aura';
 import { calculateAuraStats } from '@/lib/aura-calculator';
@@ -17,35 +17,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch initial data
-  useEffect(() => {
-    fetchAuraData();
-  }, []);
-
-  // Subscribe to real-time updates
-  useEffect(() => {
-    const channel = supabase
-      .channel('aura_events_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'aura_events',
-        },
-        (payload) => {
-          console.log('Real-time update:', payload);
-          fetchAuraData();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  async function fetchAuraData() {
+  // Memoized fetch function to prevent unnecessary re-renders
+  const fetchAuraData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -68,7 +41,34 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
+
+  // Fetch initial data
+  useEffect(() => {
+    fetchAuraData();
+  }, [fetchAuraData]);
+
+  // Subscribe to real-time updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('aura_events_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'aura_events',
+        },
+        () => {
+          fetchAuraData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchAuraData]);
 
   if (loading) {
     return (

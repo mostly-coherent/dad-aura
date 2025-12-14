@@ -58,7 +58,7 @@ export default function ActivityFeed({ events }: ActivityFeedProps) {
               >
                 {/* Emoji */}
                 <span 
-                  className={`text-3xl sm:text-4xl flex-shrink-0 ${isFlip ? 'animate-spin-slow' : ''}`}
+                  className="text-3xl sm:text-4xl flex-shrink-0"
                   role="img" 
                   aria-hidden="true"
                 >

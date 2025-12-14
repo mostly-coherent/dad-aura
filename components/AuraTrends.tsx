@@ -34,7 +34,11 @@ export default function AuraTrends({ last7Days, last30Days }: AuraTrendsProps) {
         <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-gray-900 dark:text-white">
           <span aria-hidden="true">📊 </span>Last 7 Days
         </h2>
-        <div className="h-[200px] sm:h-[250px] md:h-[300px]">
+        {/* Screen reader summary */}
+        <p className="sr-only">
+          7-day summary: {format7Days.map(d => `${d.date}: ${d.total > 0 ? '+' : ''}${d.total} points`).join(', ')}
+        </p>
+        <div className="h-[200px] sm:h-[250px] md:h-[300px]" role="img" aria-hidden="true">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={format7Days} margin={{ top: 5, right: 5, left: -10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
@@ -86,7 +90,11 @@ export default function AuraTrends({ last7Days, last30Days }: AuraTrendsProps) {
         <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-gray-900 dark:text-white">
           <span aria-hidden="true">📈 </span>Last 30 Days
         </h2>
-        <div className="h-[200px] sm:h-[250px] md:h-[300px]">
+        {/* Screen reader summary */}
+        <p className="sr-only">
+          30-day total: {format30Days.reduce((sum, d) => sum + d.total, 0)} points across {format30Days.reduce((sum, d) => sum + d.events, 0)} events
+        </p>
+        <div className="h-[200px] sm:h-[250px] md:h-[300px]" role="img" aria-hidden="true">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={format30Days} margin={{ top: 5, right: 5, left: -10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />

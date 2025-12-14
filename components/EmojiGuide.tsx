@@ -93,12 +93,6 @@ export default function EmojiGuide() {
               )
             ))}
 
-            {/* Phone number reminder */}
-            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-center">
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                Text to: <span className="font-mono font-bold text-purple-700 dark:text-purple-400">Your Vonage Number</span>
-              </p>
-            </div>
           </div>
         )}
       </div>
