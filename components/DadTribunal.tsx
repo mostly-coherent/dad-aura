@@ -101,7 +101,7 @@ export default function DadTribunal({ onVerdictSaved }: DadTribunalProps) {
           setTimeout(() => {
             setShowSavedMessage(false);
             setCurrentVerdict(null);
-            setMessages([]);
+            // Don't clear messages - keep chat history visible
           }, 3000);
           onVerdictSaved();
         } else {
@@ -140,6 +140,20 @@ export default function DadTribunal({ onVerdictSaved }: DadTribunalProps) {
           <p className="text-amber-200/80 text-xs mt-2">
             🛡️ All verdicts are reviewed for safety
           </p>
+          {messages.length > 0 && (
+            <button
+              onClick={() => {
+                setMessages([]);
+                setInput('');
+                setError(null);
+                setCurrentVerdict(null);
+                setShowSavedMessage(false);
+              }}
+              className="mt-3 text-xs px-3 py-1.5 bg-amber-600/50 hover:bg-amber-600 text-white rounded-full transition-colors"
+            >
+              🔄 New Chat Session
+            </button>
+          )}
         </div>
 
         {/* Chat Area */}
