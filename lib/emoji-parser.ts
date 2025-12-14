@@ -228,7 +228,7 @@ function getFirstEmoji(str: string): string {
       i++;
     }
     // Combining marks for flags and keycaps
-    else if (code >= 0x20E3 && code <= 0x20E3 || (code >= 0x1F1E6 && code <= 0x1F1FF)) {
+    else if (code === 0x20E3 || (code >= 0x1F1E6 && code <= 0x1F1FF)) {
       emoji += char;
       i++;
     }

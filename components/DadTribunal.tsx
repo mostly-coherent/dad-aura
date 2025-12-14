@@ -220,13 +220,16 @@ export default function DadTribunal({ onVerdictSaved }: DadTribunalProps) {
 
           {/* Input Form */}
           <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
+            <label htmlFor="tribunal-input" className="sr-only">Tell The Tribunal what Dad did today</label>
             <textarea
+              id="tribunal-input"
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Tell The Tribunal what Dad did today..."
               className="flex-1 px-4 py-3 rounded-lg border-2 border-amber-400 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 resize-none text-sm sm:text-base min-h-[48px]"
               disabled={isLoading}
+              aria-describedby="tribunal-input-hint"
               rows={1}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -235,6 +238,7 @@ export default function DadTribunal({ onVerdictSaved }: DadTribunalProps) {
                 }
               }}
             />
+            <span id="tribunal-input-hint" className="sr-only">Press Enter to submit, Shift+Enter for new line</span>
             <button
               type="submit"
               disabled={isLoading || !input.trim()}
@@ -261,10 +265,12 @@ export default function DadTribunal({ onVerdictSaved }: DadTribunalProps) {
               'Dad told a terrible joke',
             ].map((prompt) => (
               <button
+                type="button"
                 key={prompt}
                 onClick={() => setInput(prompt)}
                 className="text-xs px-2 py-1 bg-amber-700/50 hover:bg-amber-700 text-amber-100 rounded-full transition-colors"
                 disabled={isLoading}
+                aria-label={`Use quick prompt: ${prompt}`}
               >
                 {prompt}
               </button>

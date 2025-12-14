@@ -12,6 +12,7 @@ export default function FlipConfigPanel() {
 
   useEffect(() => {
     fetchConfig();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function fetchConfig() {
@@ -22,7 +23,7 @@ export default function FlipConfigPanel() {
         return;
       }
       const data = await response.json();
-      if (data.error || !data.max_flips_per_day === undefined) {
+      if (data.error || data.max_flips_per_day === undefined) {
         console.error('Error in flip config response:', data.error);
         return;
       }

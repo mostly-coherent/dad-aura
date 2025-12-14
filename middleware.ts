@@ -42,7 +42,7 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public files
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\..*|api/sms-webhook).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)',
   ],
 };
 

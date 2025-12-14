@@ -16,6 +16,7 @@ export default function DadFlipButton({ currentTotal, onFlipSuccess }: DadFlipBu
 
   useEffect(() => {
     fetchFlipStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function fetchFlipStatus() {
