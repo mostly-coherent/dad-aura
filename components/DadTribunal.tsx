@@ -165,9 +165,9 @@ export default function DadTribunal({ onVerdictSaved }: DadTribunalProps) {
             </div>
           )}
 
-          {/* Messages */}
+          {/* Messages - scrollable chat history */}
           {messages.length > 0 && (
-            <div className="mb-4 space-y-4 max-h-[300px] overflow-y-auto">
+            <div className="mb-4 space-y-4 max-h-[500px] sm:max-h-[600px] overflow-y-auto scroll-smooth">
               {messages.map((message) => (
                 <div
                   key={message.id}
@@ -204,23 +204,19 @@ export default function DadTribunal({ onVerdictSaved }: DadTribunalProps) {
             </div>
           )}
 
-          {/* Auto-saving indicator */}
-          {currentVerdict && !showSavedMessage && (
-            <div className="mb-4 bg-amber-100 rounded-lg p-4 border-2 border-amber-400 text-center">
-              <span className="flex items-center justify-center gap-2 text-amber-800 font-medium">
-                <span className="animate-spin">⏳</span> Saving verdict to Dad&apos;s aura...
+          {/* Status indicators - compact, non-blocking */}
+          <div className="mb-3 flex justify-center">
+            {currentVerdict && !showSavedMessage && (
+              <span className="inline-flex items-center gap-2 text-amber-200 text-sm bg-amber-800/50 px-3 py-1.5 rounded-full">
+                <span className="animate-spin">⏳</span> Saving...
               </span>
-            </div>
-          )}
-
-          {/* Saved Confirmation */}
-          {showSavedMessage && (
-            <div className="mb-4 bg-green-100 border-2 border-green-400 rounded-lg p-4 text-center animate-pulse">
-              <span className="text-green-800 font-bold text-lg">
-                ✅ Verdict recorded! Dad&apos;s aura has been updated.
+            )}
+            {showSavedMessage && (
+              <span className="inline-flex items-center gap-2 text-green-100 text-sm bg-green-700 px-3 py-1.5 rounded-full">
+                ✅ Saved!
               </span>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Input Form */}
           <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
