@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { useChat } from 'ai/react';
+import { useState, useRef, useEffect, FormEvent } from 'react';
 
 interface DadTribunalProps {
   onVerdictSaved: () => void;
@@ -16,56 +15,20 @@ interface Verdict {
   memeReference?: string | null;
 }
 
+interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export default function DadTribunal({ onVerdictSaved }: DadTribunalProps) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [currentVerdict, setCurrentVerdict] = useState<Verdict | null>(null);
   const [showSavedMessage, setShowSavedMessage] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-
-  const { messages, input, handleInputChange, handleSubmit, isLoading, setMessages } = useChat({
-    api: '/api/dad-tribunal',
-    onFinish: async (message) => {
-      // Parse the verdict from the AI response
-      try {
-        // Clean the content - remove markdown code blocks if present
-        let content = message.content;
-        content = content.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
-        
-        // Extract JSON from the response
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const verdict = JSON.parse(jsonMatch[0]) as Verdict;
-          setCurrentVerdict(verdict);
-          
-          // Auto-save the verdict immediately
-          try {
-            const response = await fetch('/api/dad-tribunal', {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(verdict),
-            });
-            
-            if (response.ok) {
-              setShowSavedMessage(true);
-              setTimeout(() => {
-                setShowSavedMessage(false);
-                setCurrentVerdict(null);
-                setMessages([]);
-              }, 3000);
-              onVerdictSaved();
-            } else {
-              console.error('Failed to save verdict:', await response.text());
-            }
-          } catch (saveError) {
-            console.error('Error saving verdict:', saveError);
-          }
-        } else {
-          console.error('No JSON found in response:', content);
-        }
-      } catch (error) {
-        console.error('Failed to parse verdict:', error, 'Content:', message.content);
-      }
-    },
-  });
 
   // Auto-resize textarea
   useEffect(() => {
@@ -75,27 +38,119 @@ export default function DadTribunal({ onVerdictSaved }: DadTribunalProps) {
     }
   }, [input]);
 
-  const lastAssistantMessage = messages.filter(m => m.role === 'assistant').pop();
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+
+    const userMessage = input.trim();
+    setInput('');
+    setError(null);
+    setIsLoading(true);
+
+    // Add user message to chat
+    const userMsg: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: userMessage,
+    };
+    setMessages((prev) => [...prev, userMsg]);
+
+    try {
+      // Call the tribunal API (OpenAI generates, Anthropic checks safety)
+      const response = await fetch('/api/dad-tribunal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: userMessage }],
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('The Tribunal is temporarily unavailable');
+      }
+
+      const responseText = await response.text();
+
+      // Add assistant message
+      const assistantMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: responseText,
+      };
+      setMessages((prev) => [...prev, assistantMsg]);
+
+      // Parse the verdict
+      const cleanContent = responseText
+        .replace(/```json\s*/gi, '')
+        .replace(/```\s*/g, '');
+      const jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
+
+      if (jsonMatch) {
+        const verdict = JSON.parse(jsonMatch[0]) as Verdict;
+        setCurrentVerdict(verdict);
+
+        // Auto-save the verdict
+        const saveResponse = await fetch('/api/dad-tribunal', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(verdict),
+        });
+
+        if (saveResponse.ok) {
+          setShowSavedMessage(true);
+          setTimeout(() => {
+            setShowSavedMessage(false);
+            setCurrentVerdict(null);
+            setMessages([]);
+          }, 3000);
+          onVerdictSaved();
+        } else {
+          console.error('Failed to save verdict');
+          setError('Failed to save the verdict. Please try again.');
+        }
+      } else {
+        console.error('No JSON found in response');
+        setError('Could not parse the verdict. Please try again.');
+      }
+    } catch (err) {
+      console.error('Tribunal error:', err);
+      setError(err instanceof Error ? err.message : 'Something went wrong');
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   return (
-    <section 
+    <section
       className="px-4 sm:px-6 py-6 sm:py-8"
       aria-label="The Dad Tribunal - AI Judge"
     >
       <div className="bg-gradient-to-br from-amber-900 via-amber-800 to-yellow-900 rounded-xl shadow-2xl overflow-hidden border-4 border-amber-600">
         {/* Header */}
         <div className="bg-gradient-to-r from-amber-700 to-yellow-700 px-4 sm:px-6 py-4 sm:py-5 text-center border-b-4 border-amber-600">
-          <div className="text-3xl sm:text-4xl mb-2" role="img" aria-label="Gavel">⚖️</div>
+          <div className="text-3xl sm:text-4xl mb-2" role="img" aria-label="Gavel">
+            ⚖️
+          </div>
           <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white drop-shadow-lg">
             The Dad Tribunal
           </h2>
           <p className="text-amber-100 text-sm sm:text-base mt-1 drop-shadow">
             Tell us how Dad performed today. We shall judge.
           </p>
+          <p className="text-amber-200/80 text-xs mt-2">
+            🛡️ All verdicts are reviewed for safety
+          </p>
         </div>
 
         {/* Chat Area */}
         <div className="p-4 sm:p-6">
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 bg-red-100 border-2 border-red-400 rounded-lg p-4 text-center">
+              <span className="text-red-800 font-medium">⚠️ {error}</span>
+            </div>
+          )}
+
           {/* Messages */}
           {messages.length > 0 && (
             <div className="mb-4 space-y-4 max-h-[300px] overflow-y-auto">
@@ -119,13 +174,15 @@ export default function DadTribunal({ onVerdictSaved }: DadTribunalProps) {
                   </div>
                 </div>
               ))}
-              
-              {isLoading && !lastAssistantMessage && (
+
+              {isLoading && (
                 <div className="flex justify-start">
                   <div className="bg-amber-100 text-amber-900 rounded-lg p-4">
                     <div className="flex items-center gap-2">
                       <span className="animate-spin">⚖️</span>
-                      <span className="text-sm font-medium">The Tribunal is deliberating...</span>
+                      <span className="text-sm font-medium">
+                        The Tribunal is deliberating & checking safety...
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -156,7 +213,7 @@ export default function DadTribunal({ onVerdictSaved }: DadTribunalProps) {
             <textarea
               ref={inputRef}
               value={input}
-              onChange={handleInputChange}
+              onChange={(e) => setInput(e.target.value)}
               placeholder="Tell The Tribunal what Dad did today..."
               className="flex-1 px-4 py-3 rounded-lg border-2 border-amber-400 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 resize-none text-sm sm:text-base min-h-[48px]"
               disabled={isLoading}
@@ -164,7 +221,7 @@ export default function DadTribunal({ onVerdictSaved }: DadTribunalProps) {
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
-                  handleSubmit(e as unknown as React.FormEvent<HTMLFormElement>);
+                  handleSubmit(e as unknown as FormEvent);
                 }
               }}
             />
@@ -195,7 +252,7 @@ export default function DadTribunal({ onVerdictSaved }: DadTribunalProps) {
             ].map((prompt) => (
               <button
                 key={prompt}
-                onClick={() => handleInputChange({ target: { value: prompt } } as React.ChangeEvent<HTMLTextAreaElement>)}
+                onClick={() => setInput(prompt)}
                 className="text-xs px-2 py-1 bg-amber-700/50 hover:bg-amber-700 text-amber-100 rounded-full transition-colors"
                 disabled={isLoading}
               >
@@ -212,29 +269,37 @@ export default function DadTribunal({ onVerdictSaved }: DadTribunalProps) {
 // Component to display the parsed verdict nicely
 function VerdictDisplay({ content }: { content: string }) {
   try {
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    // Remove safety notes before parsing
+    const cleanContent = content
+      .replace(/\n\n🛡️.*/g, '')
+      .replace(/```json\s*/gi, '')
+      .replace(/```\s*/g, '');
+    const jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const verdict = JSON.parse(jsonMatch[0]) as Verdict;
+      const hasSafetyNote = content.includes('🛡️');
+
       return (
         <div className="space-y-3">
           {/* Emoji and Points */}
           <div className="flex items-center gap-3">
             <span className="text-4xl">{verdict.emoji}</span>
-            <span className={`text-2xl sm:text-3xl font-bold ${verdict.points >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-              {verdict.points > 0 ? '+' : ''}{verdict.points}
+            <span
+              className={`text-2xl sm:text-3xl font-bold ${verdict.points >= 0 ? 'text-green-700' : 'text-red-700'}`}
+            >
+              {verdict.points > 0 ? '+' : ''}
+              {verdict.points}
             </span>
           </div>
-          
+
           {/* Verdict Title */}
           <div className="font-bold text-lg sm:text-xl text-amber-900 border-b border-amber-300 pb-2">
             🔨 {verdict.verdict}
           </div>
-          
+
           {/* Explanation */}
-          <p className="text-sm sm:text-base text-amber-800">
-            {verdict.explanation}
-          </p>
-          
+          <p className="text-sm sm:text-base text-amber-800">{verdict.explanation}</p>
+
           {/* Dad Joke */}
           {verdict.dadJoke && (
             <div className="bg-yellow-100 rounded-lg p-3 border border-yellow-300">
@@ -244,7 +309,7 @@ function VerdictDisplay({ content }: { content: string }) {
               </p>
             </div>
           )}
-          
+
           {/* Meme Reference */}
           {verdict.memeReference && (
             <div className="bg-purple-100 rounded-lg p-3 border border-purple-300">
@@ -254,13 +319,20 @@ function VerdictDisplay({ content }: { content: string }) {
               </p>
             </div>
           )}
+
+          {/* Safety note indicator */}
+          {hasSafetyNote && (
+            <div className="text-xs text-amber-600 flex items-center gap-1">
+              <span>🛡️</span>
+              <span>This response was reviewed for safety</span>
+            </div>
+          )}
         </div>
       );
     }
   } catch {
     // If parsing fails, show raw content
   }
-  
+
   return <p className="text-sm sm:text-base whitespace-pre-wrap">{content}</p>;
 }
-
