@@ -121,6 +121,16 @@ Deploy to Vercel (personal account):
 
 ---
 
-**Status:** In Development  
+## What I Learned
+
+The tech came together quickly—SMS webhook → Supabase real-time → instant dashboard updates. But what surprised me: my son controlling how many times I can "flip" negative scores became the most engaging feature. That power asymmetry created negotiation moments that strengthened our relationship more than the scoring itself.
+
+## What's Next
+
+I'm working on **AI guardrails that go beyond content filtering**—teaching the system when to say no, when to disagree with dad or child, and how to nurture healthy values in both. The tricky part: defining what "right" looks like when parenting decisions aren't black-and-white. Sometimes refusing to change aura points *is* the ethical choice, even when a parent or child asks. Teaching AI to enforce alignment boundaries requires codifying judgment, not just rules.
+
+---
+
+**Status:** Active Development (Constant Work in Progress)  
 **Purpose:** Personal project - strengthening dad-son connection through playful tech  
 **Aura Goal:** Achieve legendary dad status (500+ points) 🎯
