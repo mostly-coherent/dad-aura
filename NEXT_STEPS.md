@@ -25,7 +25,6 @@ Your Dad Aura app is ready to go! Here's what to do next:
 
 ### 2. Test Locally (2 minutes)
 ```bash
-cd /Users/jmbeh/Personal Builder Lab/dad-aura
 npm run dev
 ```
 Open http://localhost:3000
@@ -49,7 +48,7 @@ Watch the dashboard update in real-time!
 ```bash
 git add -A
 git commit -m "Initial commit: Dad Aura app"
-git remote add origin git@github.com:JMBeh/dad-aura.git
+git remote add origin git@github.com:your-username/dad-aura.git
 git push -u origin main
 ```
 

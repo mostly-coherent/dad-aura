@@ -22,7 +22,6 @@ A playful, emoji-driven app where my son rates my dad performance in real-time u
 ### 1. Install dependencies
 
 ```bash
-cd /Users/jmbeh/Personal Builder Lab/Dad_Aura
 npm install
 ```
 

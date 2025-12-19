@@ -6,6 +6,15 @@
 > - Environment setup and troubleshooting
 > - NOT for human readers (see README.md)
 
+## 🚨 CRITICAL: GitHub Safety
+
+**This project syncs to personal GitHub only.**
+
+Git remote: Check with `git remote -v`
+Git author: Check with `git config user.email`
+
+**Vercel:** DO NOT push/deploy unless explicitly requested (git push = auto-deploy)
+
 ## Project Type
 
 Next.js 14+ web app with TypeScript, Tailwind CSS, Supabase backend, and Vonage SMS integration
@@ -16,7 +25,6 @@ Next.js 14+ web app with TypeScript, Tailwind CSS, Supabase backend, and Vonage 
 
 ### Development
 ```bash
-cd /Users/jmbeh/Personal Builder Lab/dad-aura
 npm run dev          # Start dev server on http://localhost:3000
 npm run build        # Production build
 npm run lint         # ESLint check
