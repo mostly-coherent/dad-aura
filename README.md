@@ -2,6 +2,8 @@
 
 **A playful, emoji-driven app where my son rates my dad performance in real-time.** He sends emoji + points from his Apple Watch; I see my aura score update instantly. Track trends, celebrate wins, learn from fails.
 
+![Activity Feed](e2e-results/02-activity-feed.png)
+
 ---
 
 ## 🚀 See It Running
