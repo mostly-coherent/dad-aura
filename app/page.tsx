@@ -11,6 +11,7 @@ import ActivityFeed from '@/components/ActivityFeed';
 import DadFlipButton from '@/components/DadFlipButton';
 import FlipConfigPanel from '@/components/FlipConfigPanel';
 import EmojiGuide from '@/components/EmojiGuide';
+import LogoutButton from '@/components/LogoutButton';
 
 export default function Home() {
   const [stats, setStats] = useState<AuraStats | null>(null);
@@ -111,13 +112,16 @@ export default function Home() {
     <main className="min-h-screen pb-8 sm:pb-12">
       {/* Header */}
       <header className="bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 sm:py-6 px-4 sm:px-6 shadow-lg">
-        <div className="max-w-6xl mx-auto">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2 drop-shadow-sm">
-            Dad Aura <span role="img" aria-hidden="true">🔥</span>
-          </h1>
-          <p className="text-sm sm:text-base md:text-lg text-white/95 drop-shadow-sm">
-            Real-time dad performance tracking
-          </p>
+        <div className="max-w-6xl mx-auto flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2 drop-shadow-sm">
+              Dad Aura <span role="img" aria-hidden="true">🔥</span>
+            </h1>
+            <p className="text-sm sm:text-base md:text-lg text-white/95 drop-shadow-sm">
+              Real-time dad performance tracking
+            </p>
+          </div>
+          <LogoutButton />
         </div>
       </header>
 

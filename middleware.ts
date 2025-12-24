@@ -5,6 +5,7 @@ import type { NextRequest } from 'next/server';
 const PUBLIC_ROUTES = [
   '/api/sms-webhook', // Vonage needs to reach this
   '/api/login',       // Login endpoint
+  '/api/logout',      // Logout endpoint
 ];
 
 export function middleware(request: NextRequest) {

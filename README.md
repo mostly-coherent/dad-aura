@@ -1,107 +1,108 @@
 # 🔥 Dad Aura
 
-**A playful, emoji-driven app where my son rates my dad performance in real-time.** He sends emoji + points from his Apple Watch; I see my aura score update instantly. Track trends, celebrate wins, learn from fails.
+> A playful, emoji-driven app where my son rates my dad performance in real-time via Apple Watch, updating a live dashboard with aura scores and trends.
 
----
+![Type](https://img.shields.io/badge/Type-App-blue)
+![Status](https://img.shields.io/badge/Status-Active%20Dev-green)
+![Stack](https://img.shields.io/badge/Stack-Next.js%2014%20%7C%20Supabase%20%7C%20Vonage-blue)
 
-## 🚀 See It Running
+![Activity Feed](e2e-results/02-activity-feed.png)
 
-### Option A: Auto-Generate Server Scripts (Recommended)
-
-In Cursor Chat, type:
-
-```
-@Generate-server-scripts.md @dad-aura
-```
-
-This creates `start-servers.sh`, `stop-servers.sh`, and `check-servers.sh` for one-command startup.
-
-### Option B: Manual Quick Start
+## 🚀 Quick Start
 
 ```bash
+# 1. Install dependencies
 npm install
+
+# 2. Configure environment
 cp env.example .env.local
+# Edit .env.local with Supabase and Vonage keys
+
+# 3. Run
 npm run dev
 ```
 
-Open **http://localhost:3000** in your browser.
-
-**Note:** Full functionality requires Supabase database setup—see Environment Variables below.
+**→ Open http://localhost:3000**
 
 ---
 
-## ✨ Features
+<details>
+<summary><strong>✨ Features</strong></summary>
 
-- **Real-time aura tracking** — Current score with glowing visualizations (supports negative values!)
-- **Dad Flip power** — Reverse your aura score (e.g., -200 → +200), but son controls how many flips per day
-- **Son's control panel** — Son sets the flip limit (0-10 per day) and can change it anytime
-- **Trend analytics** — See performance: today, 7 days, 30 days
-- **Apple Watch input** — Son sends emoji + points via SMS for instant feedback
-- **Dynamic UI** — Color and glow changes based on your score
+- **Real-time aura tracking:** Current score with glowing visualizations (supports negative values!).
+- **Dad Flip power:** Reverse your aura score (e.g., -200 → +200), limited by son's settings.
+- **Son's control panel:** Son sets the flip limit (0-10 per day) and can change it anytime.
+- **Trend analytics:** Performance views for today, 7 days, and 30 days.
+- **Apple Watch input:** Son sends emoji + points via SMS for instant feedback.
+- **Dynamic UI:** Color and glow changes based on score value.
 
-## 🎯 How It Works
+</details>
+
+<details>
+<summary><strong>🎯 How It Works</strong></summary>
 
 **For Son (Aura Giver):**
-1. Text dad's phone number from Apple Watch
-2. Send emoji + points (e.g., "🔥 +10" or "💩 -5")
-3. Dashboard updates in real-time
+1. Text dad's phone number from Apple Watch.
+2. Send emoji + points (e.g., "🔥 +10" or "💩 -5").
+3. Dashboard updates in real-time.
 
 **For Dad (Aura Receiver):**
-1. Open dashboard to see current score
-2. Use flip power to reverse negative aura (limited by son!)
-3. View trends and activity feed
-4. Learn, improve, become legendary 🎯
+1. Open dashboard to see current score.
+2. Use flip power to reverse negative aura (limited by son!).
+3. View trends and activity feed.
 
-### Emoji Presets
+</details>
 
-| Positive | Points | Negative | Points |
-|----------|--------|----------|--------|
-| 🔥 | +10 | 💩 | -5 |
-| 🎉 | +15 | 😤 | -8 |
-| ❤️ | +5 | 😡 | -10 |
-| ⚡ | +25 | 💔 | -12 |
-| 🎯 | +20 | 👎 | -3 |
-
-## 🔑 Environment Variables
+<details>
+<summary><strong>⚙️ Environment Variables</strong></summary>
 
 Create `.env.local` from `env.example`:
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | ✅ | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | Supabase anonymous key |
-| `VONAGE_API_KEY` | ✅ | Vonage (for SMS receiving) |
-| `VONAGE_API_SECRET` | ✅ | Vonage authentication |
-| `VONAGE_PHONE_NUMBER` | ✅ | Your Vonage phone number |
+| Variable | Description |
+|----------|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key |
+| `VONAGE_API_KEY` | Vonage (for SMS receiving) |
+| `VONAGE_API_SECRET` | Vonage authentication |
+| `VONAGE_PHONE_NUMBER` | Your Vonage phone number |
 
-### Database Setup
+</details>
 
-Run `supabase/schema.sql` in your Supabase SQL Editor to create the `aura_events` table.
+<details>
+<summary><strong>🚢 Deployment</strong></summary>
 
-## 🚢 Deployment
+Recommended: Deploy to Vercel
 
-Deploy to Vercel:
+1. Run `supabase/schema.sql` in Supabase SQL Editor.
+2. Build locally: `npm run build`
+3. Deploy: `vercel --prod`
+4. Configure Vonage webhook to point to `https://your-domain.vercel.app/api/sms-webhook`.
 
-```bash
-vercel --prod
-```
+</details>
 
-Then configure Vonage webhook to point to `https://your-domain.vercel.app/api/sms-webhook`.
-
----
-
-## 💭 What I Learned
+<details>
+<summary><strong>💭 What I Learned</strong></summary>
 
 The tech came together quickly—SMS webhook → Supabase real-time → instant dashboard. But what surprised me: my son controlling how many times I can "flip" negative scores became the most engaging feature. That power asymmetry created negotiation moments that strengthened our relationship more than the scoring itself.
 
-## 🔮 What's Next
+</details>
+
+<details>
+<summary><strong>🔮 What's Next</strong></summary>
 
 Working on **AI guardrails that go beyond content filtering**—teaching the system when to say no, when to disagree with dad or child, and how to nurture healthy values in both. Sometimes refusing to change aura points *is* the ethical choice.
 
+</details>
+
+<details>
+<summary><strong>📚 Development Notes</strong></summary>
+
+- See `CLAUDE.md` for detailed technical setup and development commands.
+- See `Plan.md` for detailed product requirements and architecture decisions.
+- See `BUILD_LOG.md` for chronological progress.
+
+</details>
+
 ---
 
-**Status:** Active Development  
-**Stack:** Next.js 14 · TypeScript · Supabase · Tailwind · Vonage SMS  
-**Goal:** Achieve legendary dad status (500+ points) 🎯
-
-See `CLAUDE.md` for detailed technical setup and development commands.
+**Status:** Active Development | **Purpose:** Personal learning and portfolio project
