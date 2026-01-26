@@ -169,12 +169,20 @@ const NORMALIZED_PRESETS = buildNormalizedPresetMap();
  * Get preset points for an emoji, handling encoding variations.
  */
 function getPresetPointsNormalized(emoji: string): number | undefined {
+  if (!emoji || typeof emoji !== 'string' || emoji.trim().length === 0) {
+    return undefined;
+  }
+  
   // Try exact match first
   if (EMOJI_PRESETS[emoji] !== undefined) {
     return EMOJI_PRESETS[emoji];
   }
   // Try normalized match
-  return NORMALIZED_PRESETS.get(normalizeEmoji(emoji));
+  try {
+    return NORMALIZED_PRESETS.get(normalizeEmoji(emoji));
+  } catch {
+    return undefined;
+  }
 }
 
 /**
@@ -182,6 +190,10 @@ function getPresetPointsNormalized(emoji: string): number | undefined {
  * Handles multi-codepoint emojis like ❤️, 👨‍👩‍👧, 🇺🇸
  */
 function getFirstEmoji(str: string): string {
+  if (!str || typeof str !== 'string') {
+    return '';
+  }
+  
   const trimmed = str.trim();
   if (!trimmed) return '';
   
@@ -189,10 +201,12 @@ function getFirstEmoji(str: string): string {
   // Note: Not available in Edge runtime, so we have a robust fallback
   if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
     try {
-    const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
-    const segments = segmenter.segment(trimmed);
-    const first = segments[Symbol.iterator]().next().value;
-    return first?.segment || '';
+      const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
+      const segments = segmenter.segment(trimmed);
+      const first = segments[Symbol.iterator]().next().value;
+      const result = first?.segment || '';
+      // Validate result is not empty
+      return result.trim().length > 0 ? result : '';
     } catch {
       // Fall through to fallback
     }
@@ -200,44 +214,54 @@ function getFirstEmoji(str: string): string {
   
   // Fallback: Extract first emoji using Array.from and check for ZWJ sequences
   // This handles most emojis including those with variation selectors
-  const chars = Array.from(trimmed);
-  if (chars.length === 0) return '';
-  
-  // Check if first char is start of emoji sequence
-  let emoji = chars[0];
-  let i = 1;
-  
-  // Consume ZWJ sequences (emoji + ZWJ + emoji) and variation selectors
-  while (i < chars.length) {
-    const char = chars[i];
-    const code = char.codePointAt(0) || 0;
+  try {
+    const chars = Array.from(trimmed);
+    if (chars.length === 0) return '';
     
-    // ZWJ (Zero Width Joiner) - connects emoji sequences
-    if (code === 0x200D) {
-      emoji += char;
-      i++;
-      // Consume the next character after ZWJ
-      if (i < chars.length) {
-        emoji += chars[i];
+    // Check if first char is start of emoji sequence
+    let emoji = chars[0];
+    if (!emoji) return '';
+    
+    let i = 1;
+    
+    // Consume ZWJ sequences (emoji + ZWJ + emoji) and variation selectors
+    while (i < chars.length) {
+      const char = chars[i];
+      if (!char) break;
+      
+      const code = char.codePointAt(0);
+      if (code === undefined || code === null) break;
+      
+      // ZWJ (Zero Width Joiner) - connects emoji sequences
+      if (code === 0x200D) {
+        emoji += char;
+        i++;
+        // Consume the next character after ZWJ
+        if (i < chars.length && chars[i]) {
+          emoji += chars[i];
+          i++;
+        }
+      }
+      // Variation selectors (FE0E, FE0F) and skin tone modifiers (1F3FB-1F3FF)
+      else if (code === 0xFE0E || code === 0xFE0F || (code >= 0x1F3FB && code <= 0x1F3FF)) {
+        emoji += char;
         i++;
       }
+      // Combining marks for flags and keycaps
+      else if (code === 0x20E3 || (code >= 0x1F1E6 && code <= 0x1F1FF)) {
+        emoji += char;
+        i++;
+      }
+      else {
+        break;
+      }
     }
-    // Variation selectors (FE0E, FE0F) and skin tone modifiers (1F3FB-1F3FF)
-    else if (code === 0xFE0E || code === 0xFE0F || (code >= 0x1F3FB && code <= 0x1F3FF)) {
-      emoji += char;
-      i++;
-    }
-    // Combining marks for flags and keycaps
-    else if (code === 0x20E3 || (code >= 0x1F1E6 && code <= 0x1F1FF)) {
-      emoji += char;
-      i++;
-    }
-    else {
-      break;
-    }
+    
+    return emoji.trim().length > 0 ? emoji : '';
+  } catch {
+    // If fallback fails, return empty string
+    return '';
   }
-  
-  return emoji;
 }
 
 /**
@@ -288,12 +312,25 @@ export function parseSMS(message: string): ParsedSMS | null {
   const match1 = trimmed.match(pattern1);
   
   if (match1) {
-    const points = parseInt(match1[1], 10);
-    // Validate points is a valid number
-    if (isNaN(points)) {
+    const pointsStr = match1[1];
+    const emojiStr = match1[2];
+    
+    // Validate inputs before parsing
+    if (!pointsStr || !emojiStr) {
       return null;
     }
-    const emoji = getFirstEmoji(match1[2]);
+    
+    const points = parseInt(pointsStr, 10);
+    // Validate points is a valid number and within reasonable bounds
+    if (isNaN(points) || points < -1000 || points > 1000) {
+      return null;
+    }
+    
+    const emoji = getFirstEmoji(emojiStr);
+    if (!emoji || emoji.trim().length === 0) {
+      return null;
+    }
+    
     const remainingText = trimmed.substring(match1[0].length).trim();
     
     const parsed = {
@@ -313,12 +350,25 @@ export function parseSMS(message: string): ParsedSMS | null {
   const match2 = trimmed.match(pattern2);
   
   if (match2) {
-    const emoji = getFirstEmoji(match2[1]);
-    const points = parseInt(match2[2], 10);
-    // Validate points is a valid number
-    if (isNaN(points)) {
+    const emojiStr = match2[1];
+    const pointsStr = match2[2];
+    
+    // Validate inputs before parsing
+    if (!emojiStr || !pointsStr) {
       return null;
     }
+    
+    const emoji = getFirstEmoji(emojiStr);
+    if (!emoji || emoji.trim().length === 0) {
+      return null;
+    }
+    
+    const points = parseInt(pointsStr, 10);
+    // Validate points is a valid number and within reasonable bounds
+    if (isNaN(points) || points < -1000 || points > 1000) {
+      return null;
+    }
+    
     const remainingText = trimmed.substring(match2[0].length).trim();
     
     const parsed = {

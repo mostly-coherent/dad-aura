@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { AuraEvent, AuraStats } from '@/types/aura';
 import { calculateAuraStats } from '@/lib/aura-calculator';
@@ -18,12 +18,26 @@ export default function Home() {
   const [stats, setStats] = useState<AuraStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Track if component is mounted to prevent state updates after unmount
+  const isMountedRef = useRef(true);
+  
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Memoized fetch function to prevent unnecessary re-renders
   const fetchAuraData = useCallback(async () => {
+    if (!isMountedRef.current) return;
+    
     try {
-      setLoading(true);
-      setError(null);
+      if (isMountedRef.current) {
+        setLoading(true);
+        setError(null);
+      }
 
       const { data, error: fetchError } = await supabase
         .from('aura_events')
@@ -34,14 +48,41 @@ export default function Home() {
         throw fetchError;
       }
 
-      const events = (data || []) as AuraEvent[];
-      const calculatedStats = calculateAuraStats(events);
-      setStats(calculatedStats);
+      if (!isMountedRef.current) return;
+
+      // Validate data structure
+      if (!data || !Array.isArray(data)) {
+        throw new Error('Invalid data format received from database');
+      }
+
+      const events = data as AuraEvent[];
+      
+      // Validate events array before processing
+      const validEvents = events.filter((event): event is AuraEvent => {
+        return event && 
+               typeof event === 'object' &&
+               typeof event.points === 'number' &&
+               typeof event.timestamp === 'string' &&
+               typeof event.emoji === 'string';
+      });
+      
+      const calculatedStats = calculateAuraStats(validEvents);
+      
+      if (isMountedRef.current) {
+        setStats(calculatedStats);
+      }
     } catch (err) {
       console.error('Error fetching aura data:', err);
-      setError('Failed to load aura data. Please check your Supabase configuration.');
+      if (isMountedRef.current) {
+        const errorMessage = err instanceof Error 
+          ? err.message 
+          : 'Failed to load aura data. Please check your Supabase configuration.';
+        setError(errorMessage);
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -52,24 +93,42 @@ export default function Home() {
 
   // Subscribe to real-time updates
   useEffect(() => {
-    const channel = supabase
-      .channel('aura_events_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'aura_events',
-        },
-        () => {
-          fetchAuraData();
-        }
-      )
-      .subscribe();
+    if (!isMountedRef.current) return;
+    
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    
+    try {
+      channel = supabase
+        .channel('aura_events_changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'aura_events',
+          },
+          () => {
+            // Only fetch if component is still mounted
+            if (isMountedRef.current) {
+              fetchAuraData();
+            }
+          }
+        )
+        .subscribe();
+    } catch (subscribeError) {
+      console.error('Error setting up real-time subscription:', subscribeError);
+      // Don't fail the component if subscription fails
+    }
 
     return () => {
-      channel.unsubscribe();
-      supabase.removeChannel(channel);
+      if (channel) {
+        try {
+          channel.unsubscribe();
+          supabase.removeChannel(channel);
+        } catch (cleanupError) {
+          console.error('Error cleaning up real-time subscription:', cleanupError);
+        }
+      }
     };
   }, [fetchAuraData]);
 
@@ -118,7 +177,28 @@ export default function Home() {
   }
 
   if (!stats) {
-    return null;
+    // Show loading state if stats is null but not loading
+    return (
+      <main className="min-h-screen pb-8 sm:pb-12">
+        <header className="bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white py-4 sm:py-6 px-4 sm:px-6 shadow-lg">
+          <div className="max-w-6xl mx-auto flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2 drop-shadow-lg">
+                Dad Aura 🔥
+              </h1>
+              <p className="text-sm sm:text-base md:text-lg text-white/95 drop-shadow-sm">
+                Real-time dad performance tracking
+              </p>
+            </div>
+          </div>
+        </header>
+        <div className="max-w-6xl mx-auto">
+          <AuraScoreSkeleton />
+          <TrendsSkeleton />
+          <ActivityFeedSkeleton />
+        </div>
+      </main>
+    );
   }
 
   return (

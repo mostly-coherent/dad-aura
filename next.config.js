@@ -11,46 +11,52 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**.supabase.co',
+        hostname: '*.supabase.co', // Fixed: Use single * for subdomain matching
       },
     ],
   },
 
   // Security headers
   async headers() {
-    return [
-      {
-        source: '/:path*',
-        headers: [
-          {
-            key: 'X-DNS-Prefetch-Control',
-            value: 'on',
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'SAMEORIGIN',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'strict-origin-when-cross-origin',
-          },
-        ],
-      },
-      {
-        // Cache static assets
-        source: '/favicon.ico',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=86400, immutable',
-          },
-        ],
-      },
-    ];
+    try {
+      return [
+        {
+          source: '/:path*',
+          headers: [
+            {
+              key: 'X-DNS-Prefetch-Control',
+              value: 'on',
+            },
+            {
+              key: 'X-Frame-Options',
+              value: 'SAMEORIGIN',
+            },
+            {
+              key: 'X-Content-Type-Options',
+              value: 'nosniff',
+            },
+            {
+              key: 'Referrer-Policy',
+              value: 'strict-origin-when-cross-origin',
+            },
+          ],
+        },
+        {
+          // Cache static assets
+          source: '/favicon.ico',
+          headers: [
+            {
+              key: 'Cache-Control',
+              value: 'public, max-age=86400, immutable',
+            },
+          ],
+        },
+      ];
+    } catch (error) {
+      console.error('Error generating headers:', error);
+      // Return empty array on error to prevent build failure
+      return [];
+    }
   },
 
   // Experimental features for better performance

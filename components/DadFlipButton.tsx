@@ -9,36 +9,58 @@ interface DadFlipButtonProps {
 }
 
 export default function DadFlipButton({ currentTotal, onFlipSuccess }: DadFlipButtonProps) {
+  // Validate props
+  const safeCurrentTotal = typeof currentTotal === 'number' && !isNaN(currentTotal) ? currentTotal : 0;
+  
   const [flipStatus, setFlipStatus] = useState<FlipStatus | null>(null);
   const [isFlipping, setIsFlipping] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isMounted, setIsMounted] = useState(true);
 
   useEffect(() => {
+    setIsMounted(true);
     fetchFlipStatus();
+    return () => {
+      setIsMounted(false);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function fetchFlipStatus() {
+    if (!isMounted) return;
+    
     try {
       const response = await fetch('/api/flip');
       if (!response.ok) {
         console.error('Error fetching flip status: HTTP', response.status);
+        if (isMounted) {
+          setError('Failed to load flip status. Please refresh.');
+        }
         return;
       }
       const data = await response.json();
       if (data.error) {
         console.error('Error in flip status response:', data.error);
+        if (isMounted) {
+          setError(data.error || 'Failed to load flip status.');
+        }
         return;
       }
-      setFlipStatus(data);
+      if (isMounted) {
+        setFlipStatus(data);
+        setError(null);
+      }
     } catch (err) {
       console.error('Error fetching flip status:', err);
+      if (isMounted) {
+        setError('Failed to load flip status. Please try again.');
+      }
     }
   }
 
   async function handleFlip() {
-    if (!flipStatus?.canFlip) return;
+    if (!flipStatus?.canFlip || !isMounted) return;
 
     setIsFlipping(true);
     setError(null);
@@ -47,30 +69,46 @@ export default function DadFlipButton({ currentTotal, onFlipSuccess }: DadFlipBu
       const response = await fetch('/api/flip', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currentTotal }),
+        body: JSON.stringify({ currentTotal: safeCurrentTotal }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || 'Failed to flip');
+        if (isMounted) {
+          setError(data.error || 'Failed to flip');
+        }
         return;
       }
 
+      if (!isMounted) return;
+
       // Show success animation
       setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
+      const successTimer = setTimeout(() => {
+        if (isMounted) {
+          setShowSuccess(false);
+        }
+      }, 3000);
 
       // Refresh flip status
       await fetchFlipStatus();
 
       // Notify parent to refresh data
-      onFlipSuccess();
+      if (typeof onFlipSuccess === 'function') {
+        onFlipSuccess();
+      }
+      
+      return () => clearTimeout(successTimer);
     } catch (err) {
       console.error('Error flipping:', err);
-      setError('Failed to flip. Please try again.');
+      if (isMounted) {
+        setError('Failed to flip. Please try again.');
+      }
     } finally {
-      setIsFlipping(false);
+      if (isMounted) {
+        setIsFlipping(false);
+      }
     }
   }
 
@@ -78,7 +116,12 @@ export default function DadFlipButton({ currentTotal, onFlipSuccess }: DadFlipBu
     return null;
   }
 
-  const flippedTotal = currentTotal * -1;
+  const flippedTotal = safeCurrentTotal * -1;
+  
+  // Validate flipped total is finite
+  if (!isFinite(flippedTotal)) {
+    return null;
+  }
 
   return (
     <section className="px-4 sm:px-6 py-3 sm:py-4" aria-label="Dad flip power">
@@ -97,7 +140,7 @@ export default function DadFlipButton({ currentTotal, onFlipSuccess }: DadFlipBu
             </h3>
             <p className="text-white/95 text-sm drop-shadow-sm flex items-center gap-1">
               <span>Flip your aura from</span>
-              <span className="font-bold text-white">{currentTotal}</span>
+              <span className="font-bold text-white">{safeCurrentTotal}</span>
               <span className="animate-bounce-gentle inline-block">→</span>
               <span className="font-bold text-white">{flippedTotal}</span>
             </p>
@@ -147,7 +190,7 @@ export default function DadFlipButton({ currentTotal, onFlipSuccess }: DadFlipBu
             <span className="flex items-center justify-center gap-2">
               <span className="animate-wiggle inline-block" aria-hidden="true">🔄</span>
               <span>Flip Now</span>
-              <span className="font-mono">({currentTotal} → {flippedTotal})</span>
+              <span className="font-mono">({safeCurrentTotal} → {flippedTotal})</span>
             </span>
           ) : (
             <span className="flex items-center justify-center gap-2">

@@ -3,7 +3,26 @@ import type { LoginResponse } from '@/types/api';
 
 export async function POST(request: NextRequest) {
   try {
-    const { password } = await request.json();
+    let body: any;
+    try {
+      body = await request.json();
+    } catch (jsonError) {
+      console.error('Error parsing request JSON:', jsonError);
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    }
+    
+    const { password } = body;
+    
+    if (!password || typeof password !== 'string') {
+      return NextResponse.json(
+        { error: 'Missing or invalid password field' },
+        { status: 400 }
+      );
+    }
+    
     const correctPassword = process.env.APP_PASSWORD;
 
     if (!correctPassword) {

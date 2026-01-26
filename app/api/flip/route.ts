@@ -66,22 +66,45 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
+    let body: any;
+    try {
+      body = await request.json();
+    } catch (jsonError) {
+      console.error('Error parsing request JSON:', jsonError);
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    }
+    
     const { currentTotal } = body;
 
-    if (typeof currentTotal !== 'number') {
+    if (typeof currentTotal !== 'number' || isNaN(currentTotal)) {
       return NextResponse.json(
-        { error: 'Missing or invalid currentTotal' },
+        { error: 'Missing or invalid currentTotal. Must be a number.' },
         { status: 400 }
       );
     }
 
     // Get current total from database to verify
-    const { data: events } = await supabase
+    const { data: events, error: fetchError } = await supabase
       .from('aura_events')
       .select('points');
+    
+    if (fetchError) {
+      console.error('Error fetching events for flip verification:', fetchError);
+      return NextResponse.json(
+        { error: 'Failed to verify current total' },
+        { status: 500 }
+      );
+    }
 
-    const actualTotal = events?.reduce((sum, e) => sum + e.points, 0) || 0;
+    const actualTotal = events && Array.isArray(events)
+      ? events.reduce((sum, e) => {
+          const points = typeof e.points === 'number' ? e.points : 0;
+          return sum + points;
+        }, 0)
+      : 0;
 
     // Allow small discrepancy due to timing
     if (Math.abs(actualTotal - currentTotal) > 10) {

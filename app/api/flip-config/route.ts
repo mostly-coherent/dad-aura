@@ -33,12 +33,29 @@ export async function GET() {
  */
 export async function PUT(request: NextRequest) {
   try {
-    const body = await request.json();
+    let body: any;
+    try {
+      body = await request.json();
+    } catch (jsonError) {
+      console.error('Error parsing request JSON:', jsonError);
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    }
+    
     const { maxFlipsPerDay } = body;
 
-    if (typeof maxFlipsPerDay !== 'number' || maxFlipsPerDay < 0 || maxFlipsPerDay > 10) {
+    if (typeof maxFlipsPerDay !== 'number' || isNaN(maxFlipsPerDay)) {
       return NextResponse.json(
-        { error: 'Invalid maxFlipsPerDay. Must be between 0 and 10.' },
+        { error: 'Missing or invalid maxFlipsPerDay. Must be a number.' },
+        { status: 400 }
+      );
+    }
+    
+    if (maxFlipsPerDay < 0 || maxFlipsPerDay > 10 || !Number.isInteger(maxFlipsPerDay)) {
+      return NextResponse.json(
+        { error: 'Invalid maxFlipsPerDay. Must be an integer between 0 and 10.' },
         { status: 400 }
       );
     }

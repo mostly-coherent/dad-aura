@@ -10,18 +10,60 @@ interface AuraTrendsProps {
 }
 
 export default function AuraTrends({ last7Days, last30Days }: AuraTrendsProps) {
-  // Format data for charts
-  const format7Days = last7Days.map(trend => ({
-    date: format(parseISO(trend.date), 'EEE'),
-    total: trend.total,
-    events: trend.events,
-  }));
+  // Validate props
+  const safeLast7Days = Array.isArray(last7Days) ? last7Days : [];
+  const safeLast30Days = Array.isArray(last30Days) ? last30Days : [];
   
-  const format30Days = last30Days.map(trend => ({
-    date: format(parseISO(trend.date), 'M/d'),
-    total: trend.total,
-    events: trend.events,
-  }));
+  // Format data for charts with validation
+  const format7Days = safeLast7Days
+    .filter((trend): trend is AuraTrend => {
+      return trend && 
+             typeof trend === 'object' &&
+             typeof trend.date === 'string' &&
+             typeof trend.total === 'number' &&
+             typeof trend.events === 'number';
+    })
+    .map(trend => {
+      try {
+        const parsedDate = parseISO(trend.date);
+        if (isNaN(parsedDate.getTime())) {
+          return null;
+        }
+        return {
+          date: format(parsedDate, 'EEE'),
+          total: trend.total,
+          events: trend.events,
+        };
+      } catch {
+        return null;
+      }
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
+  
+  const format30Days = safeLast30Days
+    .filter((trend): trend is AuraTrend => {
+      return trend && 
+             typeof trend === 'object' &&
+             typeof trend.date === 'string' &&
+             typeof trend.total === 'number' &&
+             typeof trend.events === 'number';
+    })
+    .map(trend => {
+      try {
+        const parsedDate = parseISO(trend.date);
+        if (isNaN(parsedDate.getTime())) {
+          return null;
+        }
+        return {
+          date: format(parsedDate, 'M/d'),
+          total: trend.total,
+          events: trend.events,
+        };
+      } catch {
+        return null;
+      }
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
   
   
   return (
@@ -37,7 +79,10 @@ export default function AuraTrends({ last7Days, last30Days }: AuraTrendsProps) {
         </h2>
         {/* Screen reader summary */}
         <p className="sr-only">
-          7-day summary: {format7Days.map(d => `${d.date}: ${d.total > 0 ? '+' : ''}${d.total} points`).join(', ')}
+          7-day summary: {format7Days.length > 0 
+            ? format7Days.map(d => `${d.date}: ${d.total > 0 ? '+' : ''}${d.total} points`).join(', ')
+            : 'No data available'
+          }
         </p>
         <div className="h-[200px] sm:h-[250px] md:h-[300px]" role="img" aria-hidden="true">
           <ResponsiveContainer width="100%" height="100%">
@@ -94,7 +139,10 @@ export default function AuraTrends({ last7Days, last30Days }: AuraTrendsProps) {
         </h2>
         {/* Screen reader summary */}
         <p className="sr-only">
-          30-day total: {format30Days.reduce((sum, d) => sum + d.total, 0)} points across {format30Days.reduce((sum, d) => sum + d.events, 0)} events
+          30-day total: {format30Days.length > 0
+            ? `${format30Days.reduce((sum, d) => sum + d.total, 0)} points across ${format30Days.reduce((sum, d) => sum + d.events, 0)} events`
+            : 'No data available'
+          }
         </p>
         <div className="h-[200px] sm:h-[250px] md:h-[300px]" role="img" aria-hidden="true">
           <ResponsiveContainer width="100%" height="100%">

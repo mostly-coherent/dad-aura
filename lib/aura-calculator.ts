@@ -5,16 +5,28 @@ import { startOfDay, subDays, format, isToday } from 'date-fns';
  * Calculate the current total aura from all events
  */
 export function calculateCurrentTotal(events: AuraEvent[]): number {
-  return events.reduce((sum, event) => sum + event.points, 0);
+  if (!Array.isArray(events)) return 0;
+  return events.reduce((sum, event) => {
+    if (!event || typeof event.points !== 'number') return sum;
+    return sum + event.points;
+  }, 0);
 }
 
 /**
  * Calculate today's aura total
  */
 export function calculateTodayTotal(events: AuraEvent[]): number {
-  const todayEvents = events.filter(event => 
-    isToday(new Date(event.timestamp))
-  );
+  if (!Array.isArray(events)) return 0;
+  const todayEvents = events.filter(event => {
+    if (!event || !event.timestamp) return false;
+    try {
+      const eventDate = new Date(event.timestamp);
+      if (isNaN(eventDate.getTime())) return false;
+      return isToday(eventDate);
+    } catch {
+      return false;
+    }
+  });
   return calculateCurrentTotal(todayEvents);
 }
 
@@ -22,6 +34,10 @@ export function calculateTodayTotal(events: AuraEvent[]): number {
  * Calculate daily totals for the last N days
  */
 export function calculateDailyTrends(events: AuraEvent[], days: number): AuraTrend[] {
+  if (!Array.isArray(events) || typeof days !== 'number' || days < 1) {
+    return [];
+  }
+  
   const trends: AuraTrend[] = [];
   const today = startOfDay(new Date());
   
@@ -29,11 +45,18 @@ export function calculateDailyTrends(events: AuraEvent[], days: number): AuraTre
   const eventsByDate = new Map<string, AuraEvent[]>();
   
   events.forEach(event => {
-    const eventDate = format(startOfDay(new Date(event.timestamp)), 'yyyy-MM-dd');
-    if (!eventsByDate.has(eventDate)) {
-      eventsByDate.set(eventDate, []);
+    if (!event || !event.timestamp) return;
+    try {
+      const eventDateObj = new Date(event.timestamp);
+      if (isNaN(eventDateObj.getTime())) return;
+      const eventDate = format(startOfDay(eventDateObj), 'yyyy-MM-dd');
+      if (!eventsByDate.has(eventDate)) {
+        eventsByDate.set(eventDate, []);
+      }
+      eventsByDate.get(eventDate)!.push(event);
+    } catch {
+      // Skip invalid dates
     }
-    eventsByDate.get(eventDate)!.push(event);
   });
   
   // Generate trends for last N days
@@ -73,20 +96,60 @@ export function calculateCumulativeTrends(events: AuraEvent[], days: number): Au
  * Get events from the last N days
  */
 export function getRecentEvents(events: AuraEvent[], days: number): AuraEvent[] {
-  const cutoffDate = subDays(new Date(), days);
-  return events.filter(event => 
-    new Date(event.timestamp) >= cutoffDate
-  );
+  if (!Array.isArray(events) || typeof days !== 'number' || days < 1) {
+    return [];
+  }
+  
+  try {
+    const cutoffDate = subDays(new Date(), days);
+    return events.filter(event => {
+      if (!event || !event.timestamp) return false;
+      try {
+        const eventDate = new Date(event.timestamp);
+        if (isNaN(eventDate.getTime())) return false;
+        return eventDate >= cutoffDate;
+      } catch {
+        return false;
+      }
+    });
+  } catch {
+    return [];
+  }
 }
 
 /**
  * Calculate comprehensive aura statistics
  */
 export function calculateAuraStats(events: AuraEvent[]): AuraStats {
+  if (!Array.isArray(events)) {
+    return {
+      currentTotal: 0,
+      todayTotal: 0,
+      last7Days: [],
+      last30Days: [],
+      recentEvents: [],
+    };
+  }
+  
+  // Filter out invalid events before sorting
+  const validEvents = events.filter((event): event is AuraEvent => {
+    return event &&
+           typeof event === 'object' &&
+           typeof event.timestamp === 'string' &&
+           typeof event.points === 'number' &&
+           !isNaN(new Date(event.timestamp).getTime());
+  });
+  
   // Sort events by timestamp descending (newest first)
-  const sortedEvents = [...events].sort((a, b) => 
-    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-  );
+  const sortedEvents = [...validEvents].sort((a, b) => {
+    try {
+      const timeA = new Date(a.timestamp).getTime();
+      const timeB = new Date(b.timestamp).getTime();
+      return timeB - timeA;
+    } catch {
+      return 0;
+    }
+  });
   
   return {
     currentTotal: calculateCurrentTotal(sortedEvents),
@@ -115,7 +178,7 @@ export function getAuraStatus(total: number): string {
  * Calculate average points per event
  */
 export function calculateAveragePoints(events: AuraEvent[]): number {
-  if (events.length === 0) return 0;
+  if (!Array.isArray(events) || events.length === 0) return 0;
   const total = calculateCurrentTotal(events);
   return Math.round((total / events.length) * 10) / 10; // Round to 1 decimal
 }
@@ -124,10 +187,11 @@ export function calculateAveragePoints(events: AuraEvent[]): number {
  * Get the most used emoji
  */
 export function getMostUsedEmoji(events: AuraEvent[]): { emoji: string; count: number } | null {
-  if (events.length === 0) return null;
+  if (!Array.isArray(events) || events.length === 0) return null;
   
   const emojiCounts = new Map<string, number>();
   events.forEach(event => {
+    if (!event || !event.emoji || typeof event.emoji !== 'string') return;
     const count = emojiCounts.get(event.emoji) || 0;
     emojiCounts.set(event.emoji, count + 1);
   });
@@ -148,18 +212,24 @@ export function getMostUsedEmoji(events: AuraEvent[]): { emoji: string; count: n
  * Calculate streak of positive days
  */
 export function calculatePositiveStreak(events: AuraEvent[]): number {
-  const dailyTrends = calculateDailyTrends(events, 30);
-  let streak = 0;
+  if (!Array.isArray(events)) return 0;
   
-  // Count from most recent day backwards
-  for (let i = dailyTrends.length - 1; i >= 0; i--) {
-    if (dailyTrends[i].total > 0) {
-      streak++;
-    } else {
-      break;
+  try {
+    const dailyTrends = calculateDailyTrends(events, 30);
+    let streak = 0;
+    
+    // Count from most recent day backwards
+    for (let i = dailyTrends.length - 1; i >= 0; i--) {
+      if (dailyTrends[i] && typeof dailyTrends[i].total === 'number' && dailyTrends[i].total > 0) {
+        streak++;
+      } else {
+        break;
+      }
     }
+    
+    return streak;
+  } catch {
+    return 0;
   }
-  
-  return streak;
 }
 

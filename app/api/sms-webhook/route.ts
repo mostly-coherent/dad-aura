@@ -41,7 +41,26 @@ export async function POST(request: NextRequest) {
 
   try {
     // Vonage sends JSON by default
-    const body = await request.json();
+    let body: any;
+    try {
+      body = await request.json();
+    } catch (jsonError) {
+      console.error('Error parsing Vonage webhook JSON:', jsonError);
+      // Always return 200 to Vonage even on parse errors
+      return NextResponse.json(
+        { status: 'error', message: 'Invalid JSON payload' },
+        { status: 200 }
+      );
+    }
+    
+    // Validate Vonage payload structure
+    if (!body || typeof body !== 'object') {
+      console.error('Invalid Vonage payload structure:', body);
+      return NextResponse.json(
+        { status: 'error', message: 'Invalid payload structure' },
+        { status: 200 }
+      );
+    }
     
     // Vonage inbound SMS fields
     const messageBody = body.text as string;
@@ -104,12 +123,23 @@ export async function POST(request: NextRequest) {
     
     console.log('Aura event created:', data);
     
-    // Calculate new total
-    const { data: allEvents } = await supabase
-      .from('aura_events')
-      .select('points');
-    
-    const currentTotal = allEvents?.reduce((sum, e) => sum + e.points, 0) || 0;
+    // Calculate new total (optional - don't fail if this fails)
+    let currentTotal = 0;
+    try {
+      const { data: allEvents } = await supabase
+        .from('aura_events')
+        .select('points');
+      
+      if (allEvents && Array.isArray(allEvents)) {
+        currentTotal = allEvents.reduce((sum, e) => {
+          const points = typeof e.points === 'number' ? e.points : 0;
+          return sum + points;
+        }, 0);
+      }
+    } catch (totalError) {
+      console.error('Error calculating total (non-critical):', totalError);
+      // Continue without total - don't fail the webhook
+    }
     
     // Return success response
     // Note: Vonage inbound webhooks don't support inline replies

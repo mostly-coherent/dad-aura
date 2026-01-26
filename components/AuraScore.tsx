@@ -10,26 +10,30 @@ interface AuraScoreProps {
 }
 
 export default function AuraScore({ total, todayTotal }: AuraScoreProps) {
-  const bgColor = getAuraBackgroundColor(total);
-  const glowColor = getAuraGlowColor(total);
-  const status = getAuraStatus(total);
+  // Validate props
+  const safeTotal = typeof total === 'number' && !isNaN(total) ? total : 0;
+  const safeTodayTotal = typeof todayTotal === 'number' && !isNaN(todayTotal) ? todayTotal : 0;
+  
+  const bgColor = getAuraBackgroundColor(safeTotal);
+  const glowColor = getAuraGlowColor(safeTotal);
+  const status = getAuraStatus(safeTotal);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [prevTotal, setPrevTotal] = useState(total);
+  const [prevTotal, setPrevTotal] = useState(safeTotal);
 
   useEffect(() => {
-    if (total > prevTotal && total > 0) {
+    if (safeTotal > prevTotal && safeTotal > 0) {
       setShowCelebration(true);
       const timer = setTimeout(() => setShowCelebration(false), 2000);
       return () => clearTimeout(timer);
     }
-  }, [total, prevTotal]);
+  }, [safeTotal, prevTotal]);
 
   useEffect(() => {
-    setPrevTotal(total);
-  }, [total]);
+    setPrevTotal(safeTotal);
+  }, [safeTotal]);
 
-  const isPositive = total > 0;
-  const isHighScore = total >= 50;
+  const isPositive = safeTotal > 0;
+  const isHighScore = safeTotal >= 50;
   
   return (
     <section 
@@ -76,7 +80,7 @@ export default function AuraScore({ total, todayTotal }: AuraScoreProps) {
           relative z-10
         `}
         role="img"
-        aria-label={`Aura score: ${total} points. Status: ${status}`}
+        aria-label={`Aura score: ${safeTotal} points. Status: ${status}`}
       >
         {/* Sparkle effects for high scores */}
         {isHighScore && (
@@ -92,7 +96,7 @@ export default function AuraScore({ total, todayTotal }: AuraScoreProps) {
           className={`text-white text-5xl sm:text-6xl md:text-7xl font-bold mb-1 sm:mb-2 drop-shadow-lg transition-transform duration-300 ${isPositive ? 'hover:scale-110' : ''}`}
           aria-hidden="true"
         >
-          {total}
+          {safeTotal}
         </h2>
         <span 
           className="text-white text-base sm:text-lg md:text-xl font-semibold drop-shadow-md flex items-center gap-1" 
@@ -110,8 +114,8 @@ export default function AuraScore({ total, todayTotal }: AuraScoreProps) {
       >
         <span className="inline-flex items-center gap-2">
           {status}
-          {isPositive && total >= 50 && <span className="animate-wiggle inline-block" role="img" aria-hidden="true">🏆</span>}
-          {total < 0 && <span className="animate-wiggle inline-block" role="img" aria-hidden="true">😅</span>}
+          {isPositive && safeTotal >= 50 && <span className="animate-wiggle inline-block" role="img" aria-hidden="true">🏆</span>}
+          {safeTotal < 0 && <span className="animate-wiggle inline-block" role="img" aria-hidden="true">😅</span>}
         </span>
       </p>
       
@@ -121,18 +125,18 @@ export default function AuraScore({ total, todayTotal }: AuraScoreProps) {
         <span
           className={`
             text-xl sm:text-2xl font-bold transition-all duration-300
-            ${todayTotal > 0 
+            ${safeTodayTotal > 0 
               ? 'text-green-700 dark:text-green-400 animate-bounce-gentle' 
-              : todayTotal < 0 
+              : safeTodayTotal < 0 
               ? 'text-red-700 dark:text-red-400' 
               : 'text-gray-700 dark:text-gray-300'
             }
           `}
-          aria-label={`Today's change: ${todayTotal > 0 ? 'plus' : todayTotal < 0 ? 'minus' : ''} ${Math.abs(todayTotal)} points`}
+          aria-label={`Today's change: ${safeTodayTotal > 0 ? 'plus' : safeTodayTotal < 0 ? 'minus' : ''} ${Math.abs(safeTodayTotal)} points`}
         >
-          {todayTotal > 0 && <span className="inline-block animate-bounce-gentle" role="img" aria-hidden="true">📈</span>}
-          {todayTotal < 0 && <span className="inline-block" role="img" aria-hidden="true">📉</span>}
-          <span className="ml-1">{todayTotal > 0 ? '+' : ''}{todayTotal}</span>
+          {safeTodayTotal > 0 && <span className="inline-block animate-bounce-gentle" role="img" aria-hidden="true">📈</span>}
+          {safeTodayTotal < 0 && <span className="inline-block" role="img" aria-hidden="true">📉</span>}
+          <span className="ml-1">{safeTodayTotal > 0 ? '+' : ''}{safeTodayTotal}</span>
         </span>
       </div>
     </section>

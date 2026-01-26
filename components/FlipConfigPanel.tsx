@@ -9,50 +9,105 @@ export default function FlipConfigPanel() {
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(true);
 
   useEffect(() => {
+    setIsMounted(true);
     fetchConfig();
+    return () => {
+      setIsMounted(false);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function fetchConfig() {
+    if (!isMounted) return;
+    
     try {
       const response = await fetch('/api/flip-config');
       if (!response.ok) {
         console.error('Error fetching flip config: HTTP', response.status);
+        if (isMounted) {
+          setError('Failed to load flip configuration.');
+        }
         return;
       }
       const data = await response.json();
       if (data.error || data.max_flips_per_day === undefined) {
         console.error('Error in flip config response:', data.error);
+        if (isMounted) {
+          setError(data.error || 'Invalid configuration data.');
+        }
         return;
       }
-      setConfig(data);
-      setMaxFlips(data.max_flips_per_day);
+      
+      // Validate max_flips_per_day
+      const maxFlipsValue = typeof data.max_flips_per_day === 'number' 
+        ? Math.max(0, Math.min(10, Math.round(data.max_flips_per_day)))
+        : 2;
+      
+      if (isMounted) {
+        setConfig(data);
+        setMaxFlips(maxFlipsValue);
+        setError(null);
+      }
     } catch (err) {
       console.error('Error fetching flip config:', err);
+      if (isMounted) {
+        setError('Failed to load flip configuration. Please try again.');
+      }
     }
   }
 
   async function handleSave() {
+    if (!isMounted) return;
+    
+    // Validate maxFlips before saving
+    const validMaxFlips = typeof maxFlips === 'number' 
+      ? Math.max(0, Math.min(10, Math.round(maxFlips)))
+      : 2;
+    
     setIsSaving(true);
+    setError(null);
 
     try {
       const response = await fetch('/api/flip-config', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ maxFlipsPerDay: maxFlips }),
+        body: JSON.stringify({ maxFlipsPerDay: validMaxFlips }),
       });
 
-      if (response.ok) {
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 3000);
-        await fetchConfig();
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (isMounted) {
+          setError(data.error || 'Failed to save configuration.');
+        }
+        return;
       }
+
+      if (!isMounted) return;
+
+      setShowSuccess(true);
+      const successTimer = setTimeout(() => {
+        if (isMounted) {
+          setShowSuccess(false);
+        }
+      }, 3000);
+      
+      await fetchConfig();
+      
+      return () => clearTimeout(successTimer);
     } catch (err) {
       console.error('Error updating flip config:', err);
+      if (isMounted) {
+        setError('Failed to save configuration. Please try again.');
+      }
     } finally {
-      setIsSaving(false);
+      if (isMounted) {
+        setIsSaving(false);
+      }
     }
   }
 
@@ -101,6 +156,11 @@ export default function FlipConfigPanel() {
               )}
 
               <div className="bg-white/15 rounded-lg p-4 mb-4">
+                {error && (
+                  <div className="mb-4 p-3 bg-red-600/30 border border-red-300 rounded-lg text-white text-sm font-medium" role="alert">
+                    {error}
+                  </div>
+                )}
                 <label htmlFor="flip-slider" className="block text-white font-semibold mb-2 drop-shadow-sm">
                   Max Flips Per Day for Dad
                 </label>
@@ -111,7 +171,12 @@ export default function FlipConfigPanel() {
                     min="0"
                     max="10"
                     value={maxFlips}
-                    onChange={(e) => setMaxFlips(parseInt(e.target.value))}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value, 10);
+                      if (!isNaN(value) && value >= 0 && value <= 10) {
+                        setMaxFlips(value);
+                      }
+                    }}
                     className="flex-1 h-2 bg-white/30 rounded-lg appearance-none cursor-pointer accent-white"
                     aria-valuemin={0}
                     aria-valuemax={10}

@@ -9,6 +9,20 @@ interface ActivityFeedProps {
 }
 
 export default function ActivityFeed({ events }: ActivityFeedProps) {
+  // Validate props
+  if (!events || !Array.isArray(events)) {
+    return (
+      <div className="px-4 sm:px-6 py-6 sm:py-8">
+        <div className="bg-gradient-to-br from-white to-purple-50 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-xl p-6 sm:p-8 text-center border-2 border-purple-200 dark:border-purple-700">
+          <div className="text-5xl sm:text-6xl mb-4" role="img" aria-label="Error loading events">⚠️</div>
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-700 dark:text-gray-300">
+            Unable to load activity feed
+          </h3>
+        </div>
+      </div>
+    );
+  }
+  
   if (events.length === 0) {
     return (
       <div className="px-4 sm:px-6 py-6 sm:py-8">
@@ -41,11 +55,31 @@ export default function ActivityFeed({ events }: ActivityFeedProps) {
         </h2>
         
         <ul className="space-y-3 sm:space-y-4" role="list" aria-label="Aura events">
-          {events.map((event) => {
+          {events
+            .filter((event): event is AuraEvent => {
+              return event && 
+                     typeof event === 'object' &&
+                     typeof event.id === 'string' &&
+                     typeof event.timestamp === 'string' &&
+                     typeof event.points === 'number' &&
+                     typeof event.emoji === 'string';
+            })
+            .map((event) => {
             const isFlip = isFlipEvent(event);
             const pointsLabel = isFlip 
               ? 'Dad used a flip' 
               : `${event.points > 0 ? 'plus' : event.points < 0 ? 'minus' : ''} ${Math.abs(event.points)} points`;
+            
+            // Validate timestamp
+            let timeAgo = 'recently';
+            try {
+              const eventDate = new Date(event.timestamp);
+              if (!isNaN(eventDate.getTime())) {
+                timeAgo = formatDistanceToNow(eventDate, { addSuffix: true });
+              }
+            } catch {
+              // Use default if date parsing fails
+            }
             
             return (
               <li
@@ -62,7 +96,7 @@ export default function ActivityFeed({ events }: ActivityFeedProps) {
                     : 'bg-gray-100 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600'
                   }
                 `}
-                aria-label={`${event.emoji} ${pointsLabel}, ${formatDistanceToNow(new Date(event.timestamp), { addSuffix: true })}${event.note ? `, note: ${event.note}` : ''}`}
+                aria-label={`${event.emoji} ${pointsLabel}, ${timeAgo}${event.note ? `, note: ${event.note}` : ''}`}
               >
                 {/* Emoji */}
                 <span 
@@ -87,9 +121,16 @@ export default function ActivityFeed({ events }: ActivityFeedProps) {
                     )}
                     <time 
                       className="text-xs sm:text-sm text-gray-600 dark:text-gray-400"
-                      dateTime={new Date(event.timestamp).toISOString()}
+                      dateTime={(() => {
+                        try {
+                          const eventDate = new Date(event.timestamp);
+                          return !isNaN(eventDate.getTime()) ? eventDate.toISOString() : '';
+                        } catch {
+                          return '';
+                        }
+                      })()}
                     >
-                      {formatDistanceToNow(new Date(event.timestamp), { addSuffix: true })}
+                      {timeAgo}
                     </time>
                   </div>
                   

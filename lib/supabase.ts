@@ -11,21 +11,34 @@ function getSupabaseClient(): SupabaseClient {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!supabaseUrl || typeof supabaseUrl !== 'string' || supabaseUrl.trim().length === 0) {
     throw new Error(
-      'Missing Supabase environment variables. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY'
+      'Missing or invalid NEXT_PUBLIC_SUPABASE_URL environment variable. Please set a valid Supabase URL.'
     );
   }
 
-  supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
-    realtime: {
-      params: {
-        eventsPerSecond: 10,
-      },
-    },
-  });
+  if (!supabaseAnonKey || typeof supabaseAnonKey !== 'string' || supabaseAnonKey.trim().length === 0) {
+    throw new Error(
+      'Missing or invalid NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable. Please set a valid Supabase anon key.'
+    );
+  }
 
-  return supabaseClient;
+  try {
+    supabaseClient = createClient(supabaseUrl.trim(), supabaseAnonKey.trim(), {
+      realtime: {
+        params: {
+          eventsPerSecond: 10,
+        },
+      },
+    });
+
+    return supabaseClient;
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+    throw new Error(
+      `Failed to create Supabase client: ${errorMessage}. Please check your Supabase configuration.`
+    );
+  }
 }
 
 // Export a proxy that lazily initializes the client on first use

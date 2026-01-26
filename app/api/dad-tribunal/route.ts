@@ -133,7 +133,16 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
+    let body: any;
+    try {
+      body = await request.json();
+    } catch (jsonError) {
+      console.error('Error parsing request JSON:', jsonError);
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON payload' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
     
     // useChat sends { messages: [...] }, extract the last user message
     const messages = body.messages;
@@ -154,20 +163,45 @@ export async function POST(request: NextRequest) {
     }
 
     const userContent = lastUserMessage.content;
+    
+    // Validate user content
+    if (typeof userContent !== 'string' || userContent.trim().length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'User message content is required and must be non-empty' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Validate content length (prevent abuse)
+    if (userContent.length > 2000) {
+      return new Response(
+        JSON.stringify({ error: 'Message content too long. Maximum 2000 characters.' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Step 1: Generate verdict with OpenAI GPT-4o
     console.log('Generating verdict with OpenAI...');
-    const tribunalResult = await generateText({
-      model: openai('gpt-4o'),
-      system: SYSTEM_PROMPT,
-      messages: [
-        {
-          role: 'user',
-          content: `My son says: "${userContent}"\n\nPlease evaluate this dad behavior and respond with your verdict in the required JSON format.`,
-        },
-      ],
-      maxTokens: 500,
-    });
+    let tribunalResult;
+    try {
+      tribunalResult = await generateText({
+        model: openai('gpt-4o'),
+        system: SYSTEM_PROMPT,
+        messages: [
+          {
+            role: 'user',
+            content: `My son says: "${userContent}"\n\nPlease evaluate this dad behavior and respond with your verdict in the required JSON format.`,
+          },
+        ],
+        maxTokens: 500,
+      });
+    } catch (openaiError) {
+      console.error('Error generating verdict with OpenAI:', openaiError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to generate verdict. Please try again later.' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
     const verdictText = tribunalResult.text;
     console.log('Verdict generated:', verdictText.substring(0, 100) + '...');
@@ -223,11 +257,67 @@ export async function POST(request: NextRequest) {
 // Non-streaming version for saving to database after verdict
 export async function PUT(request: NextRequest) {
   try {
-    const { points, emoji, verdict, explanation, dadJoke, memeReference } = await request.json();
-
-    if (typeof points !== 'number' || !emoji || !verdict) {
+    let body: any;
+    try {
+      body = await request.json();
+    } catch (jsonError) {
+      console.error('Error parsing request JSON:', jsonError);
       return new Response(
-        JSON.stringify({ error: 'Invalid verdict data' }),
+        JSON.stringify({ error: 'Invalid JSON payload' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const { points, emoji, verdict, explanation, dadJoke, memeReference } = body;
+
+    // Validate required fields
+    if (typeof points !== 'number' || isNaN(points)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid points. Must be a number.' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Validate points range
+    if (points < -50 || points > 50) {
+      return new Response(
+        JSON.stringify({ error: 'Points must be between -50 and 50' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    if (!emoji || typeof emoji !== 'string' || emoji.trim().length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid emoji. Must be a non-empty string.' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    if (!verdict || typeof verdict !== 'string' || verdict.trim().length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid verdict. Must be a non-empty string.' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Validate optional fields
+    if (explanation && (typeof explanation !== 'string' || explanation.length > 1000)) {
+      return new Response(
+        JSON.stringify({ error: 'Explanation must be a string with max 1000 characters' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    if (dadJoke && (typeof dadJoke !== 'string' || dadJoke.length > 500)) {
+      return new Response(
+        JSON.stringify({ error: 'Dad joke must be a string with max 500 characters' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    if (memeReference && (typeof memeReference !== 'string' || memeReference.length > 500)) {
+      return new Response(
+        JSON.stringify({ error: 'Meme reference must be a string with max 500 characters' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
@@ -266,12 +356,25 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Get updated total
-    const { data: allEvents } = await supabase
-      .from('aura_events')
-      .select('points');
-    
-    const currentTotal = allEvents?.reduce((sum, e) => sum + e.points, 0) || 0;
+    // Get updated total (optional - don't fail if this fails)
+    let currentTotal = 0;
+    try {
+      const { data: allEvents, error: totalError } = await supabase
+        .from('aura_events')
+        .select('points');
+      
+      if (totalError) {
+        console.error('Error fetching total (non-critical):', totalError);
+      } else if (allEvents && Array.isArray(allEvents)) {
+        currentTotal = allEvents.reduce((sum, e) => {
+          const points = typeof e.points === 'number' ? e.points : 0;
+          return sum + points;
+        }, 0);
+      }
+    } catch (totalError) {
+      console.error('Error calculating total (non-critical):', totalError);
+      // Continue without total - don't fail the request
+    }
 
     return new Response(
       JSON.stringify({ 
