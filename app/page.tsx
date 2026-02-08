@@ -11,7 +11,7 @@ import ActivityFeed from '@/components/ActivityFeed';
 import DadFlipButton from '@/components/DadFlipButton';
 import FlipConfigPanel from '@/components/FlipConfigPanel';
 import EmojiGuide from '@/components/EmojiGuide';
-import LogoutButton from '@/components/LogoutButton';
+// LogoutButton removed — sign-out is now in SessionGuard (consistent across all apps)
 import { AuraScoreSkeleton, ActivityFeedSkeleton, TrendsSkeleton } from '@/components/SkeletonLoader';
 
 export default function Home() {
@@ -231,7 +231,7 @@ export default function Home() {
               <span className="animate-bounce-gentle inline-block delay-300" role="img" aria-hidden="true">👨‍👦</span>
             </p>
           </div>
-          <LogoutButton />
+          {/* Sign-out is handled by SessionGuard (fixed top-right) */}
         </div>
       </header>
 

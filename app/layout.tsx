@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { SessionGuard } from '@/components/SessionGuard';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -8,6 +9,7 @@ const inter = Inter({ subsets: ['latin'] });
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  maximumScale: 5,
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#667eea' },
     { media: '(prefers-color-scheme: dark)', color: '#1a1a2e' },
@@ -43,6 +45,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.className} bg-gray-50 dark:bg-gray-900`}>
         <ErrorBoundary>
+          <SessionGuard />
           {children}
         </ErrorBoundary>
       </body>

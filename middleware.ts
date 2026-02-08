@@ -69,6 +69,19 @@ export function middleware(request: NextRequest) {
       }
     }
 
+    // Rolling cookie refresh — extend 2-day expiry on every request
+    if (isAuthenticated) {
+      const response = NextResponse.next();
+      response.cookies.set('dad-aura-auth', 'authenticated', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 2, // 2 days
+        path: '/',
+      });
+      return response;
+    }
+
     return NextResponse.next();
   } catch (error) {
     // Fail open - better to allow requests than block everything on middleware error
